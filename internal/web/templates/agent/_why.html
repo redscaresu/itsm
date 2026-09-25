@@ -1,0 +1,43 @@
+<section data-testid="{{tid_agent_why_panel}}">
+  <h2 class="govuk-heading-m">Why</h2>
+  {{- if not .Runs}}
+  <p class="govuk-body">No triage run has finished yet.</p>
+  {{- end}}
+  {{- $col := "govuk-grid-column-full"}}{{if eq (len .Runs) 2}}{{$col = "govuk-grid-column-one-half"}}{{end}}
+  <div class="govuk-grid-row">
+    {{- range .Runs}}
+    <div class="{{$col}}" data-testid="{{tid_agent_why_run}}">
+      <h3 class="govuk-heading-s">Run {{.N}}{{if .Run.Model}} · {{.Run.Model}}{{end}} · {{.Run.Latency.Milliseconds}} ms</h3>
+      {{- if .Run.Error}}
+      <p class="govuk-body">jev error: {{.Run.Error}}</p>
+      {{- else}}
+      <h4 class="govuk-heading-s">Team</h4>
+      {{- range .TeamBars}}
+      <p class="govuk-body-s govuk-!-margin-bottom-1">{{if .Chosen}}<strong>{{.Label}}</strong>{{else}}{{.Label}}{{end}} {{printf "%.2f" .P}}</p>
+      <div class="itsm-bar govuk-!-margin-bottom-2"><div class="itsm-bar__fill" style="width: {{.Percent}}%"></div></div>
+      {{- end}}
+      <h4 class="govuk-heading-s">Scope</h4>
+      <ul class="govuk-list">
+        {{- range .Scope}}
+        <li>{{if .Chosen}}<strong>{{.Label}}</strong>{{else}}{{.Label}}{{end}} {{printf "%.2f" .P}}</li>
+        {{- end}}
+      </ul>
+      <h4 class="govuk-heading-s">Kind</h4>
+      <ul class="govuk-list">
+        {{- range .Kind}}
+        <li>{{if .Chosen}}<strong>{{.Label}}</strong>{{else}}{{.Label}}{{end}} {{printf "%.2f" .P}}</li>
+        {{- end}}
+      </ul>
+      <h4 class="govuk-heading-s">Yes / no questions</h4>
+      <ul class="govuk-list">
+        {{- range .Nouls}}
+        <li>{{.Label}} {{printf "%.2f" .P}}</li>
+        {{- end}}
+      </ul>
+      <h4 class="govuk-heading-s">Severity rule</h4>
+      <p class="govuk-body" data-testid="{{tid_agent_why_rule}}">{{.Run.Severity}}: {{.RuleWords}} (<code>{{.Run.Rule}}</code>)</p>
+      {{- end}}
+    </div>
+    {{- end}}
+  </div>
+</section>

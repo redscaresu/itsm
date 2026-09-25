@@ -1,0 +1,27 @@
+{{define "title"}}Agent queue – IT self-service{{end}}
+{{define "content"}}
+<h1 class="govuk-heading-l">Agent queue</h1>
+<form method="get" action="/agent" hx-get="/agent/queue" hx-target="#agent-queue" hx-swap="outerHTML" hx-trigger="change, submit">
+  <div class="govuk-form-group govuk-!-display-inline-block govuk-!-margin-right-4">
+    <label class="govuk-label" for="filter-team">Team</label>
+    <select class="govuk-select" id="filter-team" name="team" data-testid="{{tid_agent_filter_team}}">
+      <option value="">All teams</option>
+      {{- range .Queue.Teams}}
+      <option value="{{.}}"{{if eq . $.Queue.Filter.Team}} selected{{end}}>{{.Label}}</option>
+      {{- end}}
+    </select>
+  </div>
+  <div class="govuk-form-group govuk-!-display-inline-block govuk-!-margin-right-4">
+    <label class="govuk-label" for="filter-severity">Severity</label>
+    <select class="govuk-select" id="filter-severity" name="severity" data-testid="{{tid_agent_filter_severity}}">
+      <option value="">All severities</option>
+      {{- range .Queue.Severities}}
+      <option value="{{printf "%d" .}}"{{if eq . $.Queue.Filter.Severity}} selected{{end}}>{{.}}</option>
+      {{- end}}
+    </select>
+  </div>
+  <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" data-testid="{{tid_agent_filter_submit}}">Filter</button>
+</form>
+{{template "agent/_queue.html" .Queue}}
+{{template "agent/_feed.html" .Feed}}
+{{end}}

@@ -1,0 +1,16 @@
+<div id="agent-feed" data-testid="{{tid_agent_feed}}" hx-get="{{.PollURL}}" hx-trigger="every 1s" hx-swap="outerHTML">
+  <h2 class="govuk-heading-m">Decision feed</h2>
+  <ul class="govuk-list">
+    {{- range .Lines}}
+    <li class="{{.Class}}" data-testid="{{tid_agent_feed_line}}" data-ticket="{{.TicketID}}">
+      {{- if .Run.Error -}}
+      {{.TicketID}} · jev error: {{.Run.Error}} · {{.FailedTeamLabel}} · needs review
+      {{- else -}}
+      {{.TicketID}} · {{.TeamLabel}} {{printf "%.2f" .Run.Team.Confidence}} · {{.ScopeLabel}} · {{.Run.Severity}} · {{.Run.Latency.Milliseconds}} ms · {{.Run.Usage.InputTokens}} in / {{.Run.Usage.OutputTokens}} out
+      {{- end -}}
+    </li>
+    {{- else}}
+    <li>No decisions yet.</li>
+    {{- end}}
+  </ul>
+</div>

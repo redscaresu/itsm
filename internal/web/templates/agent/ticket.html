@@ -1,0 +1,62 @@
+{{define "title"}}{{.Ticket.ID}} – Agent – IT self-service{{end}}
+{{define "content"}}
+{{- $t := .Ticket}}
+<a href="/agent" class="govuk-back-link">Back to the queue</a>
+<h1 class="govuk-heading-l"><span data-testid="{{tid_ticket_id}}">{{$t.ID}}</span>: {{$t.Title}}</h1>
+<dl class="govuk-summary-list">
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Customer</dt><dd class="govuk-summary-list__value">{{$t.Customer.Name}} ({{$t.Customer.Email}})</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Description</dt><dd class="govuk-summary-list__value">{{$t.Description}}</dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Team</dt><dd class="govuk-summary-list__value">
+    <span data-testid="{{tid_ticket_team}}">{{if eq $t.Status "triaging"}}triaging…{{else}}{{$t.Team.Label}}{{end}}</span>
+    {{- if $t.NeedsReview}} <strong class="govuk-tag govuk-tag--orange" data-testid="{{tid_needs_review}}">needs review</strong>{{end}}
+  </dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Severity</dt><dd class="govuk-summary-list__value"><span data-testid="{{tid_ticket_severity}}">{{if eq $t.Status "triaging"}}triaging…{{else}}{{$t.Severity}}{{end}}</span></dd></div>
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">Status</dt><dd class="govuk-summary-list__value"><strong class="govuk-tag govuk-tag--grey" data-testid="{{tid_ticket_status}}">{{$t.Status}}</strong></dd></div>
+  {{- range $t.FollowUps}}
+  <div class="govuk-summary-list__row"><dt class="govuk-summary-list__key">{{.Question}}</dt><dd class="govuk-summary-list__value">{{if .Answer}}{{.Answer}}{{else}}Not answered yet{{end}}</dd></div>
+  {{- end}}
+</dl>
+
+<h2 class="govuk-heading-m">Actions</h2>
+{{- if .Locked}}
+<p class="govuk-body">{{if eq $t.Status "triaging"}}jev is still working on this ticket. Actions are disabled until it lands.{{else}}This ticket is closed.{{end}}</p>
+{{- end}}
+<div class="govuk-grid-row">
+  <form class="govuk-grid-column-one-third" method="post" action="/agent/tickets/{{$t.ID}}/reassign">
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="reassign-team">Reassign team</label>
+      <select class="govuk-select" id="reassign-team" name="team" data-testid="{{tid_agent_reassign_team}}"{{if .Locked}} disabled{{end}}>
+        {{- range .Teams}}
+        <option value="{{.}}"{{if eq . $t.Team}} selected{{end}}>{{.Label}}</option>
+        {{- end}}
+      </select>
+    </div>
+    <button type="submit" class="govuk-button" data-module="govuk-button" data-testid="{{tid_agent_reassign_submit}}"{{if .Locked}} disabled aria-disabled="true"{{end}}>Reassign</button>
+  </form>
+  <form class="govuk-grid-column-one-third" method="post" action="/agent/tickets/{{$t.ID}}/severity">
+    <div class="govuk-form-group">
+      <label class="govuk-label" for="change-severity">Change severity</label>
+      <select class="govuk-select" id="change-severity" name="severity" data-testid="{{tid_agent_severity_select}}"{{if .Locked}} disabled{{end}}>
+        {{- range .Severities}}
+        <option value="{{printf "%d" .}}"{{if eq . $t.Severity}} selected{{end}}>{{.}}</option>
+        {{- end}}
+      </select>
+    </div>
+    <button type="submit" class="govuk-button" data-module="govuk-button" data-testid="{{tid_agent_severity_submit}}"{{if .Locked}} disabled aria-disabled="true"{{end}}>Change severity</button>
+  </form>
+  <form class="govuk-grid-column-one-third" method="post" action="/agent/tickets/{{$t.ID}}/close">
+    <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button" data-testid="{{tid_agent_close_submit}}"{{if .Locked}} disabled aria-disabled="true"{{end}}>Close ticket</button>
+  </form>
+</div>
+
+{{- if $t.Overrides}}
+<h2 class="govuk-heading-m">Agent changes</h2>
+<ul class="govuk-list">
+  {{- range $t.Overrides}}
+  <li data-testid="{{tid_agent_override}}">{{.Field}}: {{.From}} → {{.To}} at {{.At.Format "15:04:05"}}</li>
+  {{- end}}
+</ul>
+{{- end}}
+
+{{template "agent/_why.html" .}}
+{{end}}
