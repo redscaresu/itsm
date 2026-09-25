@@ -1,0 +1,45 @@
+{{/* The ticket's status panel (HLD 3.1). While triaging it polls itself
+   every second and swaps itself out; once triage lands the new panel has no
+   hx-trigger, so polling stops. Data: server.ticketView. */}}
+<div id="ticket-status-panel" class="{{.Flash}}" data-testid="{{tid_customer_status_panel}}"
+  {{- if .Triaging}} hx-get="{{.PollURL}}" hx-trigger="every 1s" hx-swap="outerHTML"{{end}}>
+  <dl class="govuk-summary-list">
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Ticket number</dt>
+      <dd class="govuk-summary-list__value" data-testid="{{tid_ticket_id}}">{{.Ticket.ID}}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Status</dt>
+      <dd class="govuk-summary-list__value">
+        <strong class="govuk-tag{{if .Triaging}} govuk-tag--grey{{end}}" data-status="{{.Ticket.Status}}" data-testid="{{tid_ticket_status}}">{{.StatusLabel}}</strong>
+        {{if .Ticket.NeedsReview}}<strong class="govuk-tag govuk-tag--yellow" data-testid="{{tid_needs_review}}">Needs review</strong>{{end}}
+      </dd>
+    </div>
+    {{if not .Triaging}}
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Team</dt>
+      <dd class="govuk-summary-list__value" data-testid="{{tid_ticket_team}}">{{.Ticket.Team.Label}}</dd>
+    </div>
+    <div class="govuk-summary-list__row">
+      <dt class="govuk-summary-list__key">Severity</dt>
+      <dd class="govuk-summary-list__value" data-testid="{{tid_ticket_severity}}">{{.Ticket.Severity.String}}</dd>
+    </div>
+    {{end}}
+  </dl>
+  {{if .Triaging}}
+  <p class="govuk-body" data-testid="{{tid_customer_triaging}}">Working out where to send this…</p>
+  {{end}}
+  {{if .NeedsInfo}}
+  <h2 class="govuk-heading-m">We need a bit more information</h2>
+  <form method="post" action="/tickets/{{.Ticket.ID}}/follow-up" novalidate data-testid="{{tid_customer_follow_up_form}}">
+    {{range .FollowUps}}
+    <div class="govuk-form-group{{if .Problem}} govuk-form-group--error{{end}}">
+      <label class="govuk-label" for="{{.Field}}">{{.Question}}</label>
+      {{if .Problem}}<p id="{{.Field}}-error" class="govuk-error-message"><span class="govuk-visually-hidden">Error:</span> {{.Problem}}</p>{{end}}
+      <textarea class="govuk-textarea{{if .Problem}} govuk-textarea--error{{end}}" id="{{.Field}}" name="{{.ID}}" rows="2"{{if .Problem}} aria-describedby="{{.Field}}-error"{{end}} data-testid="{{tid_customer_follow_up_answer}}-{{.ID}}">{{.Answer}}</textarea>
+    </div>
+    {{end}}
+    <button type="submit" class="govuk-button" data-module="govuk-button" data-testid="{{tid_customer_follow_up_submit}}">Send answers</button>
+  </form>
+  {{end}}
+</div>

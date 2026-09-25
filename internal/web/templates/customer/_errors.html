@@ -1,0 +1,14 @@
+{{/* GOV.UK error summary. Data: a list of {Field, Message}; renders nothing when empty. */}}
+{{if .}}
+<div class="govuk-error-summary" data-module="govuk-error-summary" data-testid="{{tid_customer_error_summary}}">
+  <div role="alert">
+    <h2 class="govuk-error-summary__title">There is a problem</h2>
+    <div class="govuk-error-summary__body">
+      <ul class="govuk-list govuk-error-summary__list">
+        {{range .}}<li><a href="#{{.Field}}">{{.Message}}</a></li>
+        {{end}}
+      </ul>
+    </div>
+  </div>
+</div>
+{{end}}
