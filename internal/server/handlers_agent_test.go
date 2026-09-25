@@ -136,7 +136,7 @@ func TestQueueSinceFlashesOnlyNewerRows(t *testing.T) {
 
 // Regression: if the feed sorts oldest-first, drops a ticket's second run,
 // or skips failed runs, the audience cannot watch jev decide, and a jev
-// outage is invisible on the agent screen (HLD 3.2 item 3, 4.6).
+// outage is invisible in the feed or the queue row (HLD 3.2 item 3, 4.6).
 func TestAgentFeedNewestFirstWithErrorLine(t *testing.T) {
 	st, h := newAgentServer(t)
 	t0 := time.Date(2026, 9, 25, 9, 0, 0, 0, time.UTC)
@@ -168,6 +168,10 @@ func TestAgentFeedNewestFirstWithErrorLine(t *testing.T) {
 	assert.Equal(t, []string{c.ID, b.ID, a.ID, c.ID}, order)
 	assert.Equal(t, a.ID+" · Network 0.98 · one office · Sev 2 · 640 ms · 607 in / 146 out", text[a.ID])
 	assert.Equal(t, b.ID+" · jev error: timeout · Service Desk · needs review", text[b.ID])
+
+	// HLD 4.6: the error shows in the queue row too, not only the feed.
+	row := element(do(t, h, http.MethodGet, "/agent/queue", nil).Body.String(), "tr", b.ID)
+	assert.Contains(t, row, "jev error: timeout")
 }
 
 // Regression: if the Why panel reads the ticket's current values, or only
