@@ -1,0 +1,32 @@
+/* Project styles on top of govuk-frontend. Class names shared with Go code
+   are constants in internal/web/web.go; keep the two in step. */
+
+/* web.FlashClass: a queue row that is new or changed since the last poll
+   (HLD 3.2). The server adds the class; the animation runs once per swap. */
+.itsm-flash {
+  animation: itsm-flash 1.5s ease-out;
+}
+
+@keyframes itsm-flash {
+  from { background-color: #ffdd00; }
+  to   { background-color: transparent; }
+}
+
+/* web.TriagingClass: a row whose ticket is still triaging shows grey. */
+.itsm-triaging {
+  color: #505a5f;
+  background-color: #f3f2f1;
+}
+
+/* Probability bar for the agent's Why panel. Set the fill's width inline,
+   e.g. style="width: 98%". */
+.itsm-bar {
+  background-color: #f3f2f1;
+  height: 1.25rem;
+  width: 100%;
+}
+
+.itsm-bar__fill {
+  background-color: #1d70b8;
+  height: 100%;
+}

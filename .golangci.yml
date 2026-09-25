@@ -1,0 +1,31 @@
+version: "2"
+
+run:
+  build-tags:
+    - e2e
+    - live
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - misspell
+    - noctx
+    - revive
+    - unconvert
+  exclusions:
+    rules:
+      # Tests build requests against local test servers; a context adds nothing.
+      - path: _test\.go
+        linters:
+          - noctx
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/redscaresu/itsm
