@@ -1,0 +1,49 @@
+{{define "layout" -}}
+<!DOCTYPE html>
+<html lang="en" class="govuk-template">
+<head>
+  <meta charset="utf-8">
+  <title>{{block "title" .}}IT self-service{{end}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0c0c">
+  <link rel="icon" sizes="48x48" href="/assets/images/favicon.ico">
+  <link rel="icon" sizes="any" href="/assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/govuk/govuk-frontend-6.5.1.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body class="govuk-template__body">
+  <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
+  <a href="#main-content" class="govuk-skip-link">Skip to main content</a>
+  <section class="govuk-service-navigation" aria-label="Service information">
+    <div class="govuk-width-container">
+      <div class="govuk-service-navigation__container">
+        <span class="govuk-service-navigation__service-name">
+          <a href="/" class="govuk-service-navigation__link">IT self-service</a>
+        </span>
+        <nav aria-label="Menu" class="govuk-service-navigation__wrapper">
+          <ul class="govuk-service-navigation__list">
+            <li class="govuk-service-navigation__item">
+              <a class="govuk-service-navigation__link" href="/">Raise a ticket</a>
+            </li>
+            <li class="govuk-service-navigation__item">
+              <a class="govuk-service-navigation__link" href="/agent">Agent queue</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </section>
+  <div class="govuk-width-container">
+    <main class="govuk-main-wrapper" id="main-content">
+      {{template "content" .}}
+    </main>
+  </div>
+  <footer class="govuk-footer">
+    <div class="govuk-width-container">
+      <p class="govuk-body-s">Demo only. Tickets are kept in memory and lost on restart.</p>
+    </div>
+  </footer>
+</body>
+</html>
+{{- end}}

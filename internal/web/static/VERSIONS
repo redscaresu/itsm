@@ -1,0 +1,16 @@
+# Vendored front-end artefacts. Copied from published release files with curl.
+# No npm, no build step. To upgrade: download the new release, replace the
+# files, update this file, and update the file names in templates/layout.html.
+
+govuk-frontend 6.5.1
+  source: https://github.com/alphagov/govuk-frontend/releases/download/v6.5.1/release-v6.5.1.zip
+  sha256 (zip): ac64b3abdb8af98624c8c0b8eabf78c894eb9da4d3b268544d0120f15abafc7a
+  copied to static/govuk/ unchanged: govuk-frontend-6.5.1.min.css,
+  govuk-frontend-6.5.1.min.js, VERSION.txt, assets/. The .map files were left out.
+  The release zip holds these files at its top level; it has no dist/ folder.
+
+htmx 2.0.10
+  source: https://github.com/bigskysoftware/htmx/releases/download/v2.0.10/htmx.min.js
+  sha256: 71ea67185bfa8c98c39d31717c6fce5d852370fcdfd129db4543774d3145c0de
+  Pinned to 2.0.x on purpose (HLD section 7): 4.0.0 changed error-swap
+  semantics and dropped the 286 stop-polling code. Do not take "latest".
