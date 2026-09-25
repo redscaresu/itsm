@@ -38,7 +38,7 @@ const maxResponseBytes = 1 << 20
 // maxErrorBody caps how much of an error body goes into an error message.
 const maxErrorBody = 200
 
-// ErrTimeout is wrapped into the error when a call timed out on both tries.
+// ErrTimeout is wrapped into the error when the last attempt timed out.
 var ErrTimeout = errors.New("timeout")
 
 // Config configures a Client. Zero Timeout and Backoff take the defaults.
@@ -169,7 +169,8 @@ func isTimeout(err error) bool {
 }
 
 // response is jev's reply (HLD 4.1). Pointers tell "missing" from zero, so a
-// key typo on either side is an error rather than a silent zero.
+// missing usage block, confidence or noul is an error rather than a silent
+// zero. The token counts inside usage are not checked this way.
 type response struct {
 	Model   string            `json:"model"`
 	Answers map[string]answer `json:"answers"`
