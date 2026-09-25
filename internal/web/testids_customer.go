@@ -1,5 +1,7 @@
 package web
 
+import "github.com/redscaresu/itsm/internal/domain"
+
 // data-testid values for the customer screen (HLD 3.1, 3.3). Owned by S4.
 // Every name starts with "customer-" so it cannot collide with the agent
 // screen's IDs.
@@ -26,8 +28,9 @@ const (
 // FollowUpAnswerTestID is the data-testid of the answer box for one
 // follow-up question, e.g. "customer-follow-up-answer-location". The
 // template builds the same string as {{tid_customer_follow_up_answer}}-{{.ID}}.
-func FollowUpAnswerTestID(followUpID string) string {
-	return TestIDCustomerFollowUpAnswer + "-" + followUpID
+// It takes a domain.FollowUpID so a misspelt ID is a compile error (HLD 3.3).
+func FollowUpAnswerTestID(id domain.FollowUpID) string {
+	return TestIDCustomerFollowUpAnswer + "-" + string(id)
 }
 
 var _ = registerTestIDs(

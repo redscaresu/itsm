@@ -191,7 +191,7 @@ func TestTicketStatusPartial(t *testing.T) {
 			assert.Equal(t, tc.wantPoll, strings.Contains(body, `hx-trigger="every 1s"`), "polling")
 			assert.Equal(t, tc.wantFollowUp, strings.Contains(body, testIDAttr(web.TestIDCustomerFollowUpForm)), "follow-up form")
 			if tc.wantFollowUp {
-				assert.Contains(t, body, testIDAttr(web.FollowUpAnswerTestID("location")))
+				assert.Contains(t, body, testIDAttr(web.FollowUpAnswerTestID(domain.FollowUpLocation)))
 				assert.Contains(t, body, "Which system, application or device has the problem?")
 			}
 		})
