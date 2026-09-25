@@ -42,8 +42,10 @@ func NewServer(logger *slog.Logger, _ Config, store domain.Store, runner domain.
 	}
 	mux := http.NewServeMux()
 	addRoutes(mux, d)
+	// recover sits inside logging, so a panicking request is still logged,
+	// with the 500 that recover wrote.
 	var h http.Handler = mux
-	h = logRequests(logger, h)
 	h = recoverPanics(logger, h)
+	h = logRequests(logger, h)
 	return h
 }

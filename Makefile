@@ -5,7 +5,7 @@ GO ?= go
 build:
 	$(GO) build -o bin/itsm ./cmd/itsm
 
-# Needs TYPESAFE_API_KEY in the shell (see README); never put it in this file.
+# Needs TYPESAFE_API_KEY in the shell; never put it in this file.
 run:
 	$(GO) run ./cmd/itsm
 
