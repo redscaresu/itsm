@@ -144,8 +144,8 @@ var statusLabels = map[domain.Status]string{
 	domain.StatusClosed:    "Closed",
 }
 
-// ticketView is the data for customer/ticket.html and customer/_status.html.
-type ticketView struct {
+// customerTicketView is the data for customer/ticket.html and customer/_status.html.
+type customerTicketView struct {
 	Ticket      domain.Ticket
 	StatusLabel string
 	Triaging    bool   // show the "working out" text and keep polling
@@ -165,8 +165,8 @@ type followUpView struct {
 	Problem  string
 }
 
-func newTicketView(t domain.Ticket, flash string) ticketView {
-	v := ticketView{
+func newCustomerTicketView(t domain.Ticket, flash string) customerTicketView {
+	v := customerTicketView{
 		Ticket:      t,
 		StatusLabel: statusLabels[t.Status],
 		Triaging:    t.Status == domain.StatusTriaging,
@@ -207,7 +207,7 @@ func handleTicketPage(d deps) http.Handler {
 		if !ok {
 			return
 		}
-		d.render(w, http.StatusOK, tmplCustomerTicket, newTicketView(t, ""))
+		d.render(w, http.StatusOK, tmplCustomerTicket, newCustomerTicketView(t, ""))
 	})
 }
 
@@ -224,7 +224,7 @@ func handleTicketStatus(d deps) http.Handler {
 		if !ok {
 			return
 		}
-		d.render(w, http.StatusOK, tmplCustomerStatus, newTicketView(t, flashClass(t.UpdatedAt, since)))
+		d.render(w, http.StatusOK, tmplCustomerStatus, newCustomerTicketView(t, flashClass(t.UpdatedAt, since)))
 	})
 }
 
@@ -245,7 +245,7 @@ func handleFollowUp(d deps) http.Handler {
 			return
 		}
 		id := r.PathValue("id")
-		var view ticketView
+		var view customerTicketView
 		err := d.store.Update(r.Context(), id, func(t *domain.Ticket) error {
 			return recordAnswers(t, r.PostForm.Get, d.clock(), &view)
 		})
@@ -267,11 +267,11 @@ func handleFollowUp(d deps) http.Handler {
 
 // recordAnswers is the Update function for handleFollowUp. On missing
 // answers it fills view so the handler can re-render the form with errors.
-func recordAnswers(t *domain.Ticket, get func(string) string, now time.Time, view *ticketView) error {
+func recordAnswers(t *domain.Ticket, get func(string) string, now time.Time, view *customerTicketView) error {
 	if t.Status != domain.StatusNeedsInfo || len(t.FollowUps) == 0 {
 		return errNoFollowUpRound
 	}
-	*view = newTicketView(*t, "")
+	*view = newCustomerTicketView(*t, "")
 	for i := range view.FollowUps {
 		if !t.FollowUps[i].AnsweredAt.IsZero() {
 			return errNoFollowUpRound
