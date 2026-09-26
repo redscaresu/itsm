@@ -2,6 +2,13 @@ module github.com/redscaresu/itsm
 
 go 1.26
 
-require github.com/stretchr/testify v1.12.1
+require (
+	github.com/mxschmitt/playwright-go v0.6201.1
+	github.com/stretchr/testify v1.12.1
+)
 
-require go.yaml.in/yaml/v3 v3.0.5 // indirect
+require (
+	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
+	github.com/go-stack/stack v1.8.1 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+)
