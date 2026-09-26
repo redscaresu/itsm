@@ -27,3 +27,18 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.14.0
+
+  # The headless browser walkthrough (HLD 9). Needs Chromium, so it is its own job.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      # No @version: go run takes playwright-go's version from go.mod, so the
+      # driver always matches the library.
+      - name: Install Playwright driver and Chromium
+        run: go run github.com/mxschmitt/playwright-go/cmd/playwright install --with-deps chromium
+      - name: go test (e2e)
+        run: go test -tags e2e -count=1 ./internal/demo/...

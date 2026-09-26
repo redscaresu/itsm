@@ -86,3 +86,47 @@ Fix a threshold (`internal/triage/thresholds.go`) or a question
 expected outcome, and what live jev answered (replayed by the fake).
 `internal/demodata` reads it. The live test and the end-to-end tests both use
 this one file, so the typed text and the expected outcomes cannot drift apart.
+
+## Demo
+
+`make demo` plays the demo script in two Chromium windows: the customer
+screen on the left, the agent screen on the right. It raises the six demo
+tickets, answers ticket 4's follow-up questions, shows the decision feed and
+ticket 4's Why panel, then reassigns ticket 6 and closes ticket 1. It is
+slowed down so an audience can follow it. Nothing needs typing.
+
+Install the browser once per machine. This downloads the Playwright driver
+(with its own Node.js runtime, not npm) and Chromium, and takes a few
+minutes:
+
+```sh
+make demo-install
+```
+
+Then, with the key loaded:
+
+```sh
+typesafe-key
+make demo
+```
+
+`make demo` builds `bin/itsm`, starts it, waits for `/healthz`, plays the
+scenes, and stops the server. It talks to live jev, so it waits only for each
+ticket to leave `triaging`; it never checks the team or severity.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `DEMO_BASE_URL` | unset | Use a server that is already running instead of starting one. |
+| `DEMO_SLOWMO_MS` | `600` | Delay before each browser action. |
+| `DEMO_PAUSE_MS` | `2500` | Pause between scenes. |
+
+The windows are placed side by side and sized to the display.
+
+The same scenes run headless, with a fake jev, in the `e2e` test. That test
+checks each ticket's team and severity, so a renamed button or field fails
+in CI rather than in front of an audience:
+
+```sh
+make demo-install     # once
+go test -tags e2e ./internal/demo/...
+```
