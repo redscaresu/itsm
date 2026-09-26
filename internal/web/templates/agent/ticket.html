@@ -48,6 +48,12 @@
     <button type="submit" class="govuk-button govuk-button--warning" data-module="govuk-button" data-testid="{{tid_agent_close_submit}}"{{if .Locked}} disabled aria-disabled="true"{{end}}>Close ticket</button>
   </form>
 </div>
+{{- if $t.NeedsReview}}
+<form method="post" action="/agent/tickets/{{$t.ID}}/reviewed">
+  <p class="govuk-body">Triage flagged this ticket for a human. Any action above also clears the flag.</p>
+  <button type="submit" class="govuk-button govuk-button--secondary" data-module="govuk-button" data-testid="{{tid_agent_mark_reviewed}}"{{if .Locked}} disabled aria-disabled="true"{{end}}>Mark reviewed</button>
+</form>
+{{- end}}
 
 {{- if $t.Overrides}}
 <h2 class="govuk-heading-m">Agent changes</h2>

@@ -32,8 +32,10 @@ const (
 	windowHeight = 1000
 )
 
-// Scene 10 reassigns ticket 6 and closes ticket 1 (HLD 10).
+// Scene 10 marks ticket 4 reviewed, reassigns ticket 6 and closes ticket 1
+// (HLD 10, rev 3).
 const (
+	reviewTicketN   = 4
 	reassignTicketN = 6
 	reassignTo      = domain.TeamApplications
 	closeTicketN    = 1
@@ -75,12 +77,18 @@ type Row struct {
 	Team, Severity, Status string
 }
 
+// Review is ticket 4's needs-review badge either side of "Mark reviewed".
+type Review struct {
+	Before, After bool
+}
+
 // Result is what the walkthrough saw. The headed run ignores it; the e2e
 // test asserts on it.
 type Result struct {
 	Tickets   []TicketResult
 	FeedLines int            // decision feed lines at scene 8
 	WhyRuns   int            // runs in ticket 4's Why panel at scene 9
+	Review    Review         // ticket 4's badge at scene 10
 	Queue     map[string]Row // queue rows by ticket ID after scene 10
 }
 
@@ -212,7 +220,13 @@ func (w *walk) play(ctx context.Context) (Result, error) {
 	}{
 		{"scene 8: decision feed", func() (err error) { res.FeedLines, err = w.sceneFeed(); return err }},
 		{"scene 9: ticket 4's Why panel", func() (err error) { res.WhyRuns, err = w.sceneWhy(); return err }},
-		{"scene 10: reassign ticket 6, close ticket 1", func() (err error) { res.Queue, err = w.sceneActions(); return err }},
+		{"scene 10: mark ticket 4 reviewed, reassign ticket 6, close ticket 1", func() (err error) {
+			if res.Review, err = w.sceneReview(); err != nil {
+				return err
+			}
+			res.Queue, err = w.sceneActions()
+			return err
+		}},
 	}
 	for _, s := range steps {
 		if err := w.pause(ctx); err != nil {
@@ -365,8 +379,31 @@ func (w *walk) sceneWhy() (int, error) {
 	return a.GetByTestId(web.TestIDAgentWhyRun).Count()
 }
 
-// sceneActions is scene 10: reassign ticket 6 to Applications, close
-// ticket 1, then show the queue. It returns every demo ticket's row.
+// sceneReview is the start of scene 10: ticket 4 has been re-routed but is
+// still flagged, so the agent clicks Mark reviewed and the badge clears.
+// If live jev did not flag it there is no button, and the show moves on
+// rather than stall; the e2e test asserts on the returned badge states.
+func (w *walk) sceneReview() (Review, error) {
+	var r Review
+	if err := w.openAgentTicket(reviewTicketN); err != nil {
+		return r, err
+	}
+	badge := w.agent.GetByTestId(web.TestIDNeedsReview)
+	n, err := badge.Count()
+	if err != nil || n == 0 {
+		return r, err
+	}
+	r.Before = true
+	if err := w.submitAction(web.TestIDAgentMarkReviewed); err != nil {
+		return r, err
+	}
+	n, err = badge.Count()
+	r.After = n > 0
+	return r, err
+}
+
+// sceneActions is the rest of scene 10: reassign ticket 6 to Applications,
+// close ticket 1, then show the queue. It returns every demo ticket's row.
 func (w *walk) sceneActions() (map[string]Row, error) {
 	a := w.agent
 	if err := w.openAgentTicket(reassignTicketN); err != nil {

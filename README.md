@@ -136,8 +136,10 @@ answered, re-routed, reassigned, closed.
 
 Sends the six demo tickets, and ticket 4's follow-up answers, to the real
 jev API. For each run it checks jev's team, kind and scope choices against the
-table in the design doc (HLD 4.5), then the ticket's team, severity, status
-and needs-review flag. It does not compare probabilities; it logs them.
+table in the design doc (HLD 4.5), then the ticket's team, severity and
+status. It checks the needs-review flag after the first run only; the e2e
+test checks that the flag survives ticket 4's second run. It does not
+compare probabilities; it logs them.
 Run it by hand. It skips without a key.
 
 ```sh
@@ -161,7 +163,8 @@ this one file, so the typed text and the expected outcomes cannot drift apart.
 `make demo` plays the demo script in two Chromium windows: the customer
 screen on the left, the agent screen on the right. It raises the six demo
 tickets, answers ticket 4's follow-up questions, shows the decision feed and
-ticket 4's Why panel, then reassigns ticket 6 and closes ticket 1. It is
+ticket 4's Why panel, marks ticket 4 reviewed (triage flags a ticket for a
+human and only an agent clears it), then reassigns ticket 6 and closes ticket 1. It is
 slowed down so an audience can follow it. Nothing needs typing.
 
 Install the browser once per machine. This downloads the Playwright driver
