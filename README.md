@@ -66,7 +66,9 @@ answered, re-routed, reassigned, closed.
 ### Live smoke test
 
 Sends the six demo tickets, and ticket 4's follow-up answers, to the real
-jev API. It checks each answer against the table in the design doc (HLD 4.5).
+jev API. For each run it checks jev's team, kind and scope choices against the
+table in the design doc (HLD 4.5), then the ticket's team, severity, status
+and needs-review flag. It does not compare probabilities; it logs them.
 Run it by hand. It skips without a key.
 
 ```sh

@@ -89,8 +89,9 @@ func triageOnce(t *testing.T, store domain.Store, runner *triage.Runner, id stri
 	return got
 }
 
-// assertRun compares one live run with the HLD 4.5 row, and logs the
-// answers so a drift can be reported with the numbers.
+// assertRun checks one live run's team, kind and scope choices against the
+// HLD 4.5 row. It does not compare probabilities; it logs every answer so a
+// drift can be reported with the numbers.
 func assertRun(t *testing.T, got domain.Judgment, want demodata.Run) {
 	t.Helper()
 	t.Logf("model %s: team %s (%.2f), kind %s (%.2f), scope %s (%.2f), blocked %.2f, loc %.2f, svc %.2f, rule %s, %s",
