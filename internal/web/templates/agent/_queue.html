@@ -1,0 +1,38 @@
+<div id="agent-queue" data-testid="{{tid_agent_queue}}" hx-get="{{.PollURL}}" hx-trigger="every 1s" hx-swap="outerHTML">
+  <table class="govuk-table">
+    <caption class="govuk-table__caption govuk-table__caption--m">Tickets</caption>
+    <thead class="govuk-table__head">
+      <tr class="govuk-table__row">
+        <th scope="col" class="govuk-table__header">ID</th>
+        <th scope="col" class="govuk-table__header">Title</th>
+        <th scope="col" class="govuk-table__header">Customer</th>
+        <th scope="col" class="govuk-table__header">Team</th>
+        <th scope="col" class="govuk-table__header">Severity</th>
+        <th scope="col" class="govuk-table__header">Status</th>
+      </tr>
+    </thead>
+    <tbody class="govuk-table__body">
+      {{- range .Rows}}
+      <tr class="govuk-table__row {{.Class}}" data-testid="{{tid_agent_queue_row}}" data-ticket="{{.ID}}">
+        <td class="govuk-table__cell"><a class="govuk-link" href="/agent/tickets/{{.ID}}" data-testid="{{tid_agent_ticket_link}}"><span data-testid="{{tid_ticket_id}}">{{.ID}}</span></a></td>
+        <td class="govuk-table__cell">{{.Title}}</td>
+        <td class="govuk-table__cell">{{.Customer.Name}}</td>
+        {{- if .Triaging}}
+        <td class="govuk-table__cell"><span data-testid="{{tid_ticket_team}}">triaging…</span></td>
+        <td class="govuk-table__cell"><span data-testid="{{tid_ticket_severity}}">triaging…</span></td>
+        {{- else}}
+        <td class="govuk-table__cell">
+          <span data-testid="{{tid_ticket_team}}">{{.Team.Label}}</span>
+          {{- if .NeedsReview}} <strong class="govuk-tag govuk-tag--orange" data-testid="{{tid_needs_review}}">needs review</strong>{{end}}
+          {{- if .Error}}<br><span class="govuk-hint">jev error: {{.Error}}</span>{{end}}
+        </td>
+        <td class="govuk-table__cell"><span data-testid="{{tid_ticket_severity}}">{{.Severity}}</span></td>
+        {{- end}}
+        <td class="govuk-table__cell"><strong class="govuk-tag govuk-tag--grey" data-testid="{{tid_ticket_status}}">{{.Status}}</strong></td>
+      </tr>
+      {{- else}}
+      <tr class="govuk-table__row"><td class="govuk-table__cell" colspan="6">No tickets.</td></tr>
+      {{- end}}
+    </tbody>
+  </table>
+</div>
