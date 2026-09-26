@@ -14,9 +14,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/redscaresu/itsm/internal/domain"
+	"github.com/redscaresu/itsm/internal/jev"
 	"github.com/redscaresu/itsm/internal/server"
 	"github.com/redscaresu/itsm/internal/store/memory"
+	"github.com/redscaresu/itsm/internal/triage"
 )
 
 const (
@@ -46,11 +47,14 @@ func run(ctx context.Context, w io.Writer, _ []string, getenv func(string) strin
 	}
 	logger := slog.New(slog.NewTextHandler(w, nil))
 
-	// S1 wires a no-op runner. S6 replaces it with the real one, whose
-	// goroutines must use a base context that outlives each request and is
-	// cancelled only after runner.Wait returns or the drain expires.
-	var runner domain.Runner = domain.NopRunner{}
+	// Triage runs use their own base context: it outlives each request and
+	// the shutdown signal, and is cancelled only when run() returns, which is
+	// after runner.Wait or once the drain expires (HLD section 7).
+	baseCtx, cancelRuns := context.WithCancel(context.WithoutCancel(ctx))
+	defer cancelRuns()
 	store := memory.New()
+	triager := jev.NewTriager(jev.NewClient(jev.Config{BaseURL: cfg.BaseURL, APIKey: cfg.APIKey}))
+	runner := triage.NewRunner(baseCtx, triage.Deps{Store: store, Triager: triager, Logger: logger})
 
 	srv := &http.Server{
 		Addr:              net.JoinHostPort("", cfg.Port),
