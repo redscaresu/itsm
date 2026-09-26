@@ -66,12 +66,12 @@ func element(body, tag, id string) string {
 	return body[start : i+end]
 }
 
-// Regression: if the team or severity filter is ignored, or the poll URL
-// drops it, the agent's filtered view snaps back to every ticket.
+// Regression: if the team, severity or needs-review filter is ignored, or
+// the poll URL drops it, the agent's filtered view snaps back to every ticket.
 func TestAgentQueueFilters(t *testing.T) {
 	st, h := newAgentServer(t)
 	netSev2 := seed(t, st, domain.Ticket{Title: "a", Status: domain.StatusOpen, Team: domain.TeamNetwork, Severity: domain.Sev2})
-	netSev4 := seed(t, st, domain.Ticket{Title: "b", Status: domain.StatusOpen, Team: domain.TeamNetwork, Severity: domain.Sev4})
+	netSev4 := seed(t, st, domain.Ticket{Title: "b", Status: domain.StatusOpen, Team: domain.TeamNetwork, Severity: domain.Sev4, NeedsReview: true})
 	appSev2 := seed(t, st, domain.Ticket{Title: "c", Status: domain.StatusOpen, Team: domain.TeamApplications, Severity: domain.Sev2})
 
 	cases := []struct {
@@ -82,6 +82,7 @@ func TestAgentQueueFilters(t *testing.T) {
 		{"team=network", []string{netSev2.ID, netSev4.ID}},
 		{"severity=2", []string{netSev2.ID, appSev2.ID}},
 		{"team=network&severity=2", []string{netSev2.ID}},
+		{"needs_review=1", []string{netSev4.ID}},
 	}
 	for _, c := range cases {
 		for _, path := range []string{"/agent", "/agent/queue"} {
@@ -94,17 +95,19 @@ func TestAgentQueueFilters(t *testing.T) {
 		}
 	}
 
-	rec := do(t, h, http.MethodGet, "/agent/queue?team=network&severity=2", nil)
+	rec := do(t, h, http.MethodGet, "/agent/queue?team=network&severity=2&needs_review=1", nil)
 	poll := regexp.MustCompile(`id="agent-queue"[^>]*hx-get="([^"]+)"`).FindStringSubmatch(rec.Body.String())
 	require.Len(t, poll, 2, "queue fragment has no poll URL")
 	next, err := url.Parse(html.UnescapeString(poll[1]))
 	require.NoError(t, err)
 	assert.Equal(t, "network", next.Query().Get("team"))
 	assert.Equal(t, "2", next.Query().Get("severity"))
+	assert.Equal(t, "1", next.Query().Get("needs_review"))
 	assert.NotEmpty(t, next.Query().Get("since"))
 
 	assert.Equal(t, http.StatusBadRequest, do(t, h, http.MethodGet, "/agent/queue?team=netwrk", nil).Code)
 	assert.Equal(t, http.StatusBadRequest, do(t, h, http.MethodGet, "/agent/queue?severity=9", nil).Code)
+	assert.Equal(t, http.StatusBadRequest, do(t, h, http.MethodGet, "/agent/queue?needs_review=yes", nil).Code)
 }
 
 // Regression: if the flash ignores since, every row flashes every second
@@ -208,7 +211,8 @@ func TestWhyPanelRendersTwoRuns(t *testing.T) {
 
 // Regression: if an action forgets its HLD 6 status move or its Override,
 // a needs_info ticket stays stuck after the agent routes it, or the agent's
-// change leaves no record.
+// change leaves no record; if an action leaves the needs-review flag on, a
+// ticket a human has decided stays in the review queue (HLD 3.2 item 2).
 func TestOverrideStatusMoves(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -228,11 +232,13 @@ func TestOverrideStatusMoves(t *testing.T) {
 			domain.Override{Field: domain.OverrideStatus, From: "open", To: "closed"}},
 		{"close needs_info", "close", url.Values{}, domain.StatusNeedsInfo, domain.StatusClosed,
 			domain.Override{Field: domain.OverrideStatus, From: "needs_info", To: "closed"}},
+		{"reviewed open", "reviewed", url.Values{}, domain.StatusOpen, domain.StatusOpen,
+			domain.Override{Field: "needs_review", From: "true", To: "false"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			st, h := newAgentServer(t)
-			tk := seed(t, st, domain.Ticket{Status: c.from, Team: domain.TeamServiceDesk, Severity: domain.Sev3})
+			tk := seed(t, st, domain.Ticket{Status: c.from, Team: domain.TeamServiceDesk, Severity: domain.Sev3, NeedsReview: true})
 
 			rec := do(t, h, http.MethodPost, "/agent/tickets/"+tk.ID+"/"+c.action, c.form)
 			require.Equal(t, http.StatusSeeOther, rec.Code, rec.Body.String())
@@ -241,6 +247,7 @@ func TestOverrideStatusMoves(t *testing.T) {
 			got, err := st.Get(t.Context(), tk.ID)
 			require.NoError(t, err)
 			assert.Equal(t, c.wantStatus, got.Status)
+			assert.False(t, got.NeedsReview, "an agent acted, so the flag clears")
 			require.Len(t, got.Overrides, 1)
 			o := got.Overrides[0]
 			assert.False(t, o.At.IsZero())
@@ -253,26 +260,31 @@ func TestOverrideStatusMoves(t *testing.T) {
 // Regression: if the 409 guard is dropped, an agent's change on a triaging
 // ticket is silently overwritten when the background run lands (HLD 3.2
 // item 5); if bad input is accepted, a ticket gets a team or severity that
-// does not exist.
+// does not exist; if "Mark reviewed" is accepted on an unflagged ticket,
+// the Override list records a change that did not happen. A refused action
+// must also leave the needs-review flag as it was.
 func TestOverrideRejected(t *testing.T) {
 	cases := []struct {
-		name   string
-		status domain.Status
-		action string
-		form   url.Values
-		want   int
+		name      string
+		status    domain.Status
+		action    string
+		form      url.Values
+		want      int
+		unflagged bool
 	}{
-		{"reassign triaging", domain.StatusTriaging, "reassign", url.Values{"team": {"network"}}, http.StatusConflict},
-		{"severity triaging", domain.StatusTriaging, "severity", url.Values{"severity": {"1"}}, http.StatusConflict},
-		{"close triaging", domain.StatusTriaging, "close", url.Values{}, http.StatusConflict},
-		{"reassign closed", domain.StatusClosed, "reassign", url.Values{"team": {"network"}}, http.StatusConflict},
-		{"unknown team", domain.StatusOpen, "reassign", url.Values{"team": {"netwrk"}}, http.StatusBadRequest},
-		{"unknown severity", domain.StatusOpen, "severity", url.Values{"severity": {"5"}}, http.StatusBadRequest},
+		{"reassign triaging", domain.StatusTriaging, "reassign", url.Values{"team": {"network"}}, http.StatusConflict, false},
+		{"severity triaging", domain.StatusTriaging, "severity", url.Values{"severity": {"1"}}, http.StatusConflict, false},
+		{"close triaging", domain.StatusTriaging, "close", url.Values{}, http.StatusConflict, false},
+		{"reassign closed", domain.StatusClosed, "reassign", url.Values{"team": {"network"}}, http.StatusConflict, false},
+		{"unknown team", domain.StatusOpen, "reassign", url.Values{"team": {"netwrk"}}, http.StatusBadRequest, false},
+		{"unknown severity", domain.StatusOpen, "severity", url.Values{"severity": {"5"}}, http.StatusBadRequest, false},
+		{"reviewed triaging", domain.StatusTriaging, "reviewed", url.Values{}, http.StatusConflict, false},
+		{"reviewed not flagged", domain.StatusOpen, "reviewed", url.Values{}, http.StatusConflict, true},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			st, h := newAgentServer(t)
-			tk := seed(t, st, domain.Ticket{Status: c.status})
+			tk := seed(t, st, domain.Ticket{Status: c.status, NeedsReview: !c.unflagged})
 
 			rec := do(t, h, http.MethodPost, "/agent/tickets/"+tk.ID+"/"+c.action, c.form)
 			assert.Equal(t, c.want, rec.Code)
@@ -281,6 +293,7 @@ func TestOverrideRejected(t *testing.T) {
 			require.NoError(t, err)
 			assert.Empty(t, got.Overrides)
 			assert.Equal(t, c.status, got.Status)
+			assert.Equal(t, !c.unflagged, got.NeedsReview)
 			assert.Equal(t, tk.UpdatedAt, got.UpdatedAt)
 		})
 	}

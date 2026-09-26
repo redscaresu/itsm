@@ -21,6 +21,8 @@ const (
 	TestIDAgentSeveritySubmit = "agent-severity-submit"
 	TestIDAgentCloseSubmit    = "agent-close-submit"
 	TestIDAgentOverride       = "agent-override"
+	TestIDAgentMarkReviewed   = "agent-mark-reviewed"       // S8
+	TestIDAgentFilterReview   = "agent-filter-needs-review" // S8
 )
 
 var _ = registerTestIDs(
@@ -41,4 +43,6 @@ var _ = registerTestIDs(
 	TestIDAgentSeveritySubmit,
 	TestIDAgentCloseSubmit,
 	TestIDAgentOverride,
+	TestIDAgentMarkReviewed,
+	TestIDAgentFilterReview,
 )

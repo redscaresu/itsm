@@ -11,4 +11,5 @@ func addAgentRoutes(mux *http.ServeMux, d deps) {
 	mux.Handle("POST /agent/tickets/{id}/reassign", handleAgentReassign(d))
 	mux.Handle("POST /agent/tickets/{id}/severity", handleAgentSeverity(d))
 	mux.Handle("POST /agent/tickets/{id}/close", handleAgentClose(d))
+	mux.Handle("POST /agent/tickets/{id}/reviewed", handleAgentReviewed(d))
 }

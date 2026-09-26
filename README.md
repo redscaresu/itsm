@@ -161,7 +161,8 @@ this one file, so the typed text and the expected outcomes cannot drift apart.
 `make demo` plays the demo script in two Chromium windows: the customer
 screen on the left, the agent screen on the right. It raises the six demo
 tickets, answers ticket 4's follow-up questions, shows the decision feed and
-ticket 4's Why panel, then reassigns ticket 6 and closes ticket 1. It is
+ticket 4's Why panel, marks ticket 4 reviewed (triage flags a ticket for a
+human and only an agent clears it), then reassigns ticket 6 and closes ticket 1. It is
 slowed down so an audience can follow it. Nothing needs typing.
 
 Install the browser once per machine. This downloads the Playwright driver

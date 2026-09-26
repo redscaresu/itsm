@@ -98,7 +98,10 @@ func (r *Runner) success(j domain.Judgment, firstRound bool) func(*domain.Ticket
 			// the agent handlers is the other half.
 			return nil
 		}
-		t.Team, t.Severity, t.NeedsReview, t.Status = o.Team, o.Severity, o.NeedsReview, o.Status
+		t.Team, t.Severity, t.Status = o.Team, o.Severity, o.Status
+		// Sticky (HLD 3.2 item 2, rev 3): triage may raise the flag, never
+		// lower it. Only an agent action clears it.
+		t.NeedsReview = t.NeedsReview || o.NeedsReview
 		if len(o.FollowUps) > 0 {
 			t.FollowUps = o.FollowUps
 		}

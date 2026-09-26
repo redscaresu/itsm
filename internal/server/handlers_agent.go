@@ -18,15 +18,24 @@ import (
 
 // Query parameters and form fields for the agent screen.
 const (
-	teamParam     = "team"
-	severityParam = "severity"
+	teamParam        = "team"
+	severityParam    = "severity"
+	needsReviewParam = "needs_review"
+	needsReviewOn    = "1" // the only accepted value of needsReviewParam
 )
 
-// queueFilter is the team / severity filter from the query string (HLD 3.2).
-// A zero field means "all".
+// overrideNeedsReview is the Override field "Mark reviewed" records. The
+// domain names only team, severity and status; S8 may not edit domain, and
+// OverrideField is a string type, so the name lives here.
+const overrideNeedsReview domain.OverrideField = "needs_review"
+
+// queueFilter is the team / severity / needs-review filter from the query
+// string (HLD 3.2). A zero field means "all"; NeedsReview true is the
+// review queue.
 type queueFilter struct {
-	Team     domain.Team
-	Severity domain.Severity
+	Team        domain.Team
+	Severity    domain.Severity
+	NeedsReview bool
 }
 
 // parseQueueFilter reads the filter. An unknown team or severity is an
@@ -47,11 +56,19 @@ func parseQueueFilter(r *http.Request) (queueFilter, error) {
 		}
 		f.Severity = domain.Severity(n)
 	}
+	if raw := q.Get(needsReviewParam); raw != "" {
+		if raw != needsReviewOn {
+			return f, fmt.Errorf("unknown needs_review %q", raw)
+		}
+		f.NeedsReview = true
+	}
 	return f, nil
 }
 
 func (f queueFilter) keep(t domain.Ticket) bool {
-	return (f.Team == "" || t.Team == f.Team) && (f.Severity == 0 || t.Severity == f.Severity)
+	return (f.Team == "" || t.Team == f.Team) &&
+		(f.Severity == 0 || t.Severity == f.Severity) &&
+		(!f.NeedsReview || t.NeedsReview)
 }
 
 // pollURL is the URL of the next poll: path, the filter, and since.
@@ -62,6 +79,9 @@ func (f queueFilter) pollURL(path string, next time.Time) string {
 	}
 	if f.Severity != 0 {
 		q.Set(severityParam, strconv.Itoa(int(f.Severity)))
+	}
+	if f.NeedsReview {
+		q.Set(needsReviewParam, needsReviewOn)
 	}
 	return path + "?" + q.Encode()
 }
@@ -237,6 +257,7 @@ func newAgentTicketView(t domain.Ticket) agentTicketView {
 var (
 	errTriaging = errors.New("ticket is being triaged; try again when it lands")
 	errClosed   = errors.New("ticket is closed")
+	errReviewed = errors.New("ticket is not flagged for review")
 )
 
 // actionAllowed reports whether an agent may act on a ticket in status s.
@@ -343,7 +364,7 @@ func (d deps) storeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
 		http.Error(w, "No such ticket", http.StatusNotFound)
-	case errors.Is(err, errTriaging), errors.Is(err, errClosed):
+	case errors.Is(err, errTriaging), errors.Is(err, errClosed), errors.Is(err, errReviewed):
 		http.Error(w, err.Error(), http.StatusConflict)
 	default:
 		d.logger.Error("store", "error", err)
@@ -422,6 +443,20 @@ func handleAgentClose(d deps) http.Handler {
 	})
 }
 
+// handleAgentReviewed clears the needs-review flag: an agent has looked
+// (HLD 3.2 items 2 and 5, rev 3). A ticket that is not flagged answers 409,
+// so the Override list never records a change that did not happen.
+func handleAgentReviewed(d deps) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d.actChecked(w, r, func(t *domain.Ticket) (domain.Override, error) {
+			if !t.NeedsReview {
+				return domain.Override{}, errReviewed
+			}
+			return domain.Override{Field: overrideNeedsReview, From: "true", To: "false"}, nil
+		})
+	})
+}
+
 func openIfNeedsInfo(t *domain.Ticket) {
 	if t.Status == domain.StatusNeedsInfo {
 		t.Status = domain.StatusOpen
@@ -443,15 +478,28 @@ func decodeAction[T Validator](w http.ResponseWriter, r *http.Request) (T, bool)
 // Override. The status check runs inside Update, so a triage run that
 // starts between page load and POST still gets a 409, and a background
 // run can never overwrite the agent's change (HLD 3.2 item 5).
+//
+// Every action clears the needs-review flag: an agent has decided, so the
+// flag's "a human must look at this" is met (HLD 3.2 item 2, rev 3).
 func (d deps) act(w http.ResponseWriter, r *http.Request, change func(*domain.Ticket) domain.Override) {
+	d.actChecked(w, r, func(t *domain.Ticket) (domain.Override, error) { return change(t), nil })
+}
+
+// actChecked is act for an action that can refuse: a non-nil error answers
+// as storeError maps it, and the ticket is left unchanged.
+func (d deps) actChecked(w http.ResponseWriter, r *http.Request, change func(*domain.Ticket) (domain.Override, error)) {
 	id := r.PathValue("id")
 	err := d.store.Update(r.Context(), id, func(t *domain.Ticket) error {
 		if err := actionAllowed(t.Status); err != nil {
 			return err
 		}
-		o := change(t)
+		o, err := change(t)
+		if err != nil {
+			return err
+		}
 		o.At = d.clock()
 		t.Overrides = append(t.Overrides, o)
+		t.NeedsReview = false
 		return nil
 	})
 	if err != nil {

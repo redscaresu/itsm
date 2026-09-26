@@ -25,8 +25,10 @@ const e2eTimeout = 3 * time.Minute
 
 // Regression: if someone renames or removes a form field, button or test ID
 // the walkthrough uses, or a demo ticket stops landing on its team and
-// severity, the demo dies live in front of an audience (HLD 9). This runs
-// all ten scenes headless against the real binary and a scripted fake jev.
+// severity, the demo dies live in front of an audience (HLD 9); if triage
+// clears ticket 4's needs-review flag, or Mark reviewed does not, scene 10's
+// human-in-the-loop beat is lost. This runs all ten scenes headless against
+// the real binary and a scripted fake jev.
 func TestWalkthroughHeadless(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), e2eTimeout)
 	defer cancel()
@@ -58,11 +60,15 @@ func TestWalkthroughHeadless(t *testing.T) {
 		if assert.NotNil(t, got.After, "ticket %d: follow-ups were not answered", want.N) {
 			assert.Equal(t, want.ExpectAfter.Team.Label(), got.After.Team, "ticket %d team after answers", want.N)
 			assert.Equal(t, want.ExpectAfter.Severity.String(), got.After.Severity, "ticket %d severity after answers", want.N)
+			// HLD 3.2 item 2 (rev 3): triage never lowers the flag, so a
+			// ticket flagged on its first run is still flagged after it.
+			assert.Equal(t, want.Expect.NeedsReview, got.After.NeedsReview, "ticket %d needs review after answers", want.N)
 		}
 	}
 
 	assert.Equal(t, runs, res.FeedLines, "scene 8: one feed line per triage run")
 	assert.Equal(t, 2, res.WhyRuns, "scene 9: ticket 4's Why panel shows both runs")
+	assert.Equal(t, Review{Before: true, After: false}, res.Review, "scene 10: ticket 4 flagged, then cleared by Mark reviewed")
 	assert.Equal(t, reassignTo.Label(), res.Queue[ids[reassignTicketN]].Team, "scene 10: ticket 6 reassigned")
 	assert.Equal(t, string(domain.StatusClosed), res.Queue[ids[closeTicketN]].Status, "scene 10: ticket 1 closed")
 }

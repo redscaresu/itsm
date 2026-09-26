@@ -98,6 +98,28 @@ func TestRunnerSecondRunOpens(t *testing.T) {
 	assert.Equal(t, RuleUnclear, got.Runs[1].Rule)
 }
 
+// Catches: the runner clearing the needs-review flag itself (HLD 3.2 item 2,
+// rev 3). Ticket 4's first run raised it; a confident second run must leave
+// it on, because only an agent may clear it. Drop the "||" and this goes red.
+func TestRunnerConfidentSecondRunKeepsNeedsReview(t *testing.T) {
+	confident := run(1, domain.ScopeOneUser, 0.9, 0.9)
+	require.False(t, Decide(confident, false).NeedsReview, "precondition: this run alone would not flag")
+	r, st, id := setup(t, answer(confident))
+	require.NoError(t, st.Update(context.Background(), id, func(tk *domain.Ticket) error {
+		tk.FollowUps = []domain.FollowUp{{ID: domain.FollowUpLocation, Question: QuestionLocation, Answer: "Bristol office"}}
+		tk.Runs = []domain.Judgment{{Rule: RuleUnclear, NeedsReview: true}}
+		tk.NeedsReview = true
+		return nil
+	}))
+
+	r.Start(id)
+	got := waitStatus(t, st, id, domain.StatusOpen)
+
+	assert.True(t, got.NeedsReview)
+	require.Len(t, got.Runs, 2)
+	assert.False(t, got.Runs[1].NeedsReview, "the run's own record still says what this run decided")
+}
+
 // Catches: a confident first run is interrupted with follow-ups.
 func TestRunnerConfidentRunOpens(t *testing.T) {
 	r, st, id := setup(t, answer(run(1, domain.ScopeOneOffice, 0.07, 0.9)))
