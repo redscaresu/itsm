@@ -216,8 +216,8 @@ func choiceRows(c domain.Choice, label func(string) string) []probRow {
 	return rows
 }
 
-// ticketView is the data for agent/ticket.html.
-type ticketView struct {
+// agentTicketView is the data for agent/ticket.html.
+type agentTicketView struct {
 	Ticket     domain.Ticket
 	Runs       []whyRun
 	Locked     bool // actions disabled: triaging or closed
@@ -225,8 +225,8 @@ type ticketView struct {
 	Severities []domain.Severity
 }
 
-func newTicketView(t domain.Ticket) ticketView {
-	v := ticketView{Ticket: t, Locked: actionAllowed(t.Status) != nil, Teams: domain.Teams, Severities: domain.Severities}
+func newAgentTicketView(t domain.Ticket) agentTicketView {
+	v := agentTicketView{Ticket: t, Locked: actionAllowed(t.Status) != nil, Teams: domain.Teams, Severities: domain.Severities}
 	for i, j := range t.Runs {
 		v.Runs = append(v.Runs, newWhyRun(i+1, j))
 	}
@@ -333,7 +333,7 @@ func handleAgentTicket(d deps) http.Handler {
 			d.storeError(w, err)
 			return
 		}
-		d.render(w, http.StatusOK, "agent/ticket.html", newTicketView(t))
+		d.render(w, http.StatusOK, "agent/ticket.html", newAgentTicketView(t))
 	})
 }
 
