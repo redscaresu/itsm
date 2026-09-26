@@ -10,12 +10,90 @@ when triage can't decide, pre-written follow-up questions.
 
 Tickets are kept in memory and are lost on restart.
 
+## Getting started
+
+From nothing to the running demo on a Mac. Paste each command on its own
+line. Steps 1–4 are once per machine.
+
+1. **Install Go 1.26** (and the linter, if you want `make check` to run
+   the same checks as CI):
+
+   ```sh
+   brew install go golangci-lint
+   ```
+
+2. **Clone and build:**
+
+   ```sh
+   git clone https://github.com/redscaresu/itsm.git
+   ```
+   ```sh
+   cd itsm && make build
+   ```
+
+3. **Store your TypeSafe API key in the Keychain.** Paste the line, press
+   Enter, then paste the key and press Enter again — nothing echoes:
+
+   ```sh
+   read -rs T; security add-generic-password -U -a "$USER" -s typesafe-api-key -w "$T"; unset T
+   ```
+
+   Check it saved (prints the key's length + 1, never the key):
+
+   ```sh
+   security find-generic-password -a "$USER" -s typesafe-api-key -w | wc -c
+   ```
+
+4. **Add the loader function to your shell** and reload:
+
+   ```sh
+   cat >> ~/.zshrc <<'EOF'
+   typesafe-key() { export TYPESAFE_API_KEY="$(security find-generic-password -a "$USER" -s typesafe-api-key -w)"; }
+   EOF
+   ```
+   ```sh
+   source ~/.zshrc
+   ```
+
+5. **Prove the toolchain** — no key or network needed:
+
+   ```sh
+   make check
+   ```
+
+6. **Install the demo browser** (once; downloads the Playwright driver and
+   Chromium, a few minutes):
+
+   ```sh
+   make demo-install
+   ```
+
+7. **Run the demo.** `typesafe-key` prints nothing; it loads the key into
+   this shell only. If macOS asks whether to allow Keychain access, choose
+   *Always Allow*.
+
+   ```sh
+   typesafe-key
+   ```
+   ```sh
+   make demo
+   ```
+
+   Two Chromium windows open side by side and play the ten scenes in about
+   70 seconds. Don't click in them while it runs.
+
+To use the portal by hand instead of the scripted demo: `typesafe-key`, then
+`make run`, then open the two URLs above.
+
+**If something says `TYPESAFE_API_KEY is not set`:** run `typesafe-key` in
+the same terminal window, then retry. The key lives in that shell only.
+
 ## Run
 
-You need Go 1.26 and a TypeSafe API key.
+You need Go 1.26 and a TypeSafe API key (Getting started, steps 1–4).
 
 ```sh
-typesafe-key          # load the key into this shell only (see below)
+typesafe-key          # load the key into this shell only
 make run              # or: go run ./cmd/itsm
 ```
 
@@ -34,23 +112,13 @@ Environment only.
 
 ## Key handling
 
-Keep the key in the macOS Keychain. Load it into one shell with a function.
-Never `export` it from a shell rc file: every process started from that
-shell would inherit it.
+Keep the key in the macOS Keychain and load it into one shell with the
+`typesafe-key` function (Getting started, steps 3–4). Never `export` it from
+a shell rc file: every process started from that shell would inherit it,
+which is exactly what a malicious package's install script scrapes for.
 
-Store it once:
-
-```sh
-read -rs T; security add-generic-password -U -a "$USER" -s typesafe-api-key -w "$T"; unset T
-```
-
-Add this function to your shell rc:
-
-```sh
-typesafe-key() { export TYPESAFE_API_KEY=$(security find-generic-password -a "$USER" -s typesafe-api-key -w); }
-```
-
-Run `typesafe-key` in the shell where you start the server or the live test.
+Run `typesafe-key` in the shell where you start the server, the demo or the
+live test. It is per-terminal-window: a new tab needs it again.
 
 ## Test
 
