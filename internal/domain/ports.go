@@ -20,7 +20,8 @@ type Store interface {
 	// Update runs fn on a copy of the ticket under the store's lock. If fn
 	// returns nil the copy is saved and UpdatedAt is bumped; if fn returns an
 	// error nothing changes and that error is returned. Each writer changes
-	// only its own fields, so a slow triage run cannot overwrite an agent's
+	// only its own fields, and the triage runner writes its outcome only if
+	// the ticket is still triaging, so a slow run cannot overwrite an agent's
 	// override made in between.
 	Update(ctx context.Context, id string, fn func(*Ticket) error) error
 }

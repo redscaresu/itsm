@@ -55,7 +55,8 @@ Run `typesafe-key` in the shell where you start the server or the live test.
 ## Test
 
 ```sh
-make check            # everything CI runs: vet, test -race, golangci-lint
+make check            # CI's check job: vet, test -race, golangci-lint
+make e2e              # CI's e2e job: headless walkthrough (needs make demo-install)
 go test -race ./...   # unit and end-to-end tests; no key, no network
 ```
 

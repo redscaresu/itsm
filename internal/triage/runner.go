@@ -90,6 +90,14 @@ func (r *Runner) success(j domain.Judgment, firstRound bool) func(*domain.Ticket
 	}
 	return func(t *domain.Ticket) error {
 		t.Runs = append(t.Runs, j)
+		if t.Status != domain.StatusTriaging {
+			// Someone else owns the ticket now: an agent acted, or a later
+			// run finished first. Keep the record; leave their routing alone.
+			// This is the store-level half of HLD 6's "a slow run cannot
+			// overwrite an agent's override"; the 409-while-triaging rule in
+			// the agent handlers is the other half.
+			return nil
+		}
 		t.Team, t.Severity, t.NeedsReview, t.Status = o.Team, o.Severity, o.NeedsReview, o.Status
 		if len(o.FollowUps) > 0 {
 			t.FollowUps = o.FollowUps
@@ -110,6 +118,9 @@ func (r *Runner) failure(err error) func(*domain.Ticket) error {
 	}
 	return func(t *domain.Ticket) error {
 		t.Runs = append(t.Runs, j)
+		if t.Status != domain.StatusTriaging {
+			return nil // see success(): the ticket has moved on without us
+		}
 		t.Team, t.Severity, t.NeedsReview, t.Status = domain.TeamServiceDesk, domain.Sev3, true, domain.StatusOpen
 		return nil
 	}

@@ -148,3 +148,37 @@ func TestRunnerWait(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, domain.StatusOpen, got.Status, "Wait returned before the run saved")
 }
+
+// Catches: the runner writing its outcome over a ticket that is no longer
+// triaging. This is the store-level half of HLD 6's "a slow run cannot
+// overwrite an agent's override". Remove the status guard in success() and
+// this goes red.
+func TestRunnerLeavesTicketAloneWhenNoLongerTriaging(t *testing.T) {
+	release := make(chan struct{})
+	j := run(1, domain.ScopeOneOffice, 0.98, 0.9)
+	j.Team.Option = string(domain.TeamNetwork)
+	slow := triagerFunc(func(context.Context, domain.Ticket) (domain.Judgment, error) {
+		<-release
+		return j, nil
+	})
+	r, st, id := setup(t, slow)
+	r.Start(id)
+
+	// An agent takes the ticket over while jev is still thinking.
+	require.NoError(t, st.Update(context.Background(), id, func(tk *domain.Ticket) error {
+		tk.Status, tk.Team, tk.Severity = domain.StatusOpen, domain.TeamApplications, domain.Sev4
+		return nil
+	}))
+	close(release)
+
+	require.Eventually(t, func() bool {
+		got, err := st.Get(context.Background(), id)
+		return err == nil && len(got.Runs) == 1
+	}, eventually, tick)
+	got, err := st.Get(context.Background(), id)
+	require.NoError(t, err)
+	assert.Equal(t, domain.TeamApplications, got.Team, "the agent's team must survive the late run")
+	assert.Equal(t, domain.Sev4, got.Severity)
+	assert.Equal(t, domain.StatusOpen, got.Status)
+	assert.Equal(t, string(domain.TeamNetwork), got.Runs[0].Team.Option, "the run is still recorded")
+}
