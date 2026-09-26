@@ -1,6 +1,6 @@
 GO ?= go
 
-.PHONY: build run test vet lint check demo demo-install
+.PHONY: build run test vet lint check demo demo-install e2e
 
 build:
 	$(GO) build -o bin/itsm ./cmd/itsm
@@ -20,8 +20,12 @@ vet:
 lint:
 	golangci-lint run
 
-# Everything CI runs.
+# Everything CI's check job runs. CI also runs the e2e job: 'make e2e'.
 check: vet test lint
+
+# The headless walkthrough: real binary + fake jev + Chromium. Needs demo-install.
+e2e:
+	$(GO) test -tags e2e -count=1 ./internal/demo/...
 
 # Once per machine: downloads the Playwright driver (its own Node.js runtime,
 # not npm) and Chromium for the walkthrough. Allow a few minutes.
