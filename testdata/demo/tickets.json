@@ -1,0 +1,66 @@
+[
+  {
+    "n": 1,
+    "title": "Leeds office network down",
+    "description": "Nobody in Leeds office can get on the network since 9am. Wired and Wi-Fi both dead.",
+    "expect": { "team": "network", "severity": 2, "status": "open", "needs_review": false },
+    "jev": [
+      { "team": "network", "team_confidence": 1.0, "kind": "fault", "scope": "one_office", "scope_confidence": 1.0,
+        "blocked": 0.95, "states_location": 1.0, "states_service": 1.0 }
+    ]
+  },
+  {
+    "n": 2,
+    "title": "nDelius down nationally",
+    "description": "nDelius is down for everyone across the country.",
+    "expect": { "team": "applications", "severity": 1, "status": "open", "needs_review": false },
+    "jev": [
+      { "team": "applications", "team_confidence": 1.0, "kind": "fault", "scope": "national", "scope_confidence": 1.0,
+        "blocked": 0.92, "states_location": 1.0, "states_service": 1.0 }
+    ]
+  },
+  {
+    "n": 3,
+    "title": "Firewall change for print server",
+    "description": "Please open port 443 on the Leeds firewall so the new print server can reach the cloud print service.",
+    "expect": { "team": "network", "severity": 4, "status": "open", "needs_review": false },
+    "jev": [
+      { "team": "network", "team_confidence": 1.0, "kind": "change", "scope": "one_office", "scope_confidence": 0.95,
+        "blocked": 0.55, "states_location": 1.0, "states_service": 1.0 }
+    ]
+  },
+  {
+    "n": 4,
+    "title": "Everything is broken",
+    "description": "Everything is broken, please help.",
+    "expect": { "team": "service_desk", "severity": 3, "status": "needs_info", "needs_review": true },
+    "follow_up_answers": { "location": "Bristol office", "service": "OASys", "impact": "just me" },
+    "expect_after": { "team": "applications", "severity": 3 },
+    "jev": [
+      { "team": "service_desk", "team_confidence": 1.0, "kind": "fault", "scope": "unclear", "scope_confidence": 0.99,
+        "blocked": 0.68, "states_location": 0.03, "states_service": 0.03 },
+      { "team": "applications", "team_confidence": 0.96, "kind": "fault", "scope": "one_user", "scope_confidence": 0.98,
+        "blocked": 0.82, "states_location": 0.95, "states_service": 0.98 }
+    ]
+  },
+  {
+    "n": 5,
+    "title": "Locked out after MFA reset",
+    "description": "Locked out after my MFA reset, can't log in to anything.",
+    "expect": { "team": "identity_access", "severity": 3, "status": "open", "needs_review": false },
+    "jev": [
+      { "team": "identity_access", "team_confidence": 1.0, "kind": "fault", "scope": "one_user", "scope_confidence": 0.87,
+        "blocked": 0.94, "states_location": 0.07, "states_service": 0.28 }
+    ]
+  },
+  {
+    "n": 6,
+    "title": "Laptop screen flickers",
+    "description": "My laptop screen flickers now and then. Not urgent.",
+    "expect": { "team": "end_user_compute", "severity": 4, "status": "open", "needs_review": false },
+    "jev": [
+      { "team": "end_user_compute", "team_confidence": 1.0, "kind": "fault", "scope": "one_user", "scope_confidence": 0.64,
+        "blocked": 0.16, "states_location": 0.07, "states_service": 1.0 }
+    ]
+  }
+]
