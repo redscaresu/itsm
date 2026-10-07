@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -54,6 +55,7 @@ type Config struct {
 	Headless bool                 // false opens two visible windows
 	SlowMo   time.Duration        // delay Playwright adds to every action
 	Pause    time.Duration        // pause between scenes
+	VideoDir string               // records each window to VideoDir/<customer|agent>.webm; "" for none
 	Logf     func(string, ...any) // scene progress; nil for none
 }
 
@@ -101,21 +103,42 @@ func Run(ctx context.Context, cfg Config) (Result, error) {
 	}
 	defer func() { _ = pw.Stop() }()
 
-	customer, err := openWindow(pw, cfg, 0)
+	customer, err := openWindow(pw, cfg, 0, "customer")
 	if err != nil {
 		return Result{}, err
 	}
-	agent, err := openWindow(pw, cfg, windowWidth)
+	agent, err := openWindow(pw, cfg, windowWidth, "agent")
 	if err != nil {
 		return Result{}, err
 	}
-	if !cfg.Headless {
+	if !cfg.Headless && cfg.VideoDir == "" {
 		if err := fitHalves(customer, agent); err != nil {
 			return Result{}, err
 		}
 	}
 	w := &walk{cfg: cfg, customer: customer, agent: agent}
-	return w.play(ctx)
+	res, err := w.play(ctx)
+	if err != nil {
+		return res, err
+	}
+	return res, saveVideos(cfg.VideoDir, map[string]playwright.Page{"customer": customer, "agent": agent})
+}
+
+// saveVideos closes each recorded page and waits for its video to be
+// written as dir/<name>.webm. pw.Stop would otherwise cut the files short.
+func saveVideos(dir string, pages map[string]playwright.Page) error {
+	if dir == "" {
+		return nil
+	}
+	for name, p := range pages {
+		if err := p.Close(); err != nil {
+			return fmt.Errorf("demo: close %s window: %w", name, err)
+		}
+		if err := p.Video().SaveAs(filepath.Join(dir, name+".webm")); err != nil {
+			return fmt.Errorf("demo: save %s video: %w", name, err)
+		}
+	}
+	return nil
 }
 
 // fitHalves resizes the windows to split the display side by side. The
@@ -159,8 +182,9 @@ func fitHalves(pages ...playwright.Page) error {
 }
 
 // openWindow launches its own Chromium, so each window can be placed with
-// --window-position (HLD 10), and opens one page in it.
-func openWindow(pw *playwright.Playwright, cfg Config, left int) (playwright.Page, error) {
+// --window-position (HLD 10), and opens one page in it. name is the video
+// subdirectory when recording.
+func openWindow(pw *playwright.Playwright, cfg Config, left int, name string) (playwright.Page, error) {
 	opts := playwright.BrowserTypeLaunchOptions{
 		Headless: playwright.Bool(cfg.Headless),
 		SlowMo:   playwright.Float(float64(cfg.SlowMo.Milliseconds())),
@@ -174,8 +198,16 @@ func openWindow(pw *playwright.Playwright, cfg Config, left int) (playwright.Pag
 		return nil, fmt.Errorf("demo: launch chromium: %w", err)
 	}
 	// Headed, the page follows the window size; headless keeps Playwright's
-	// fixed default viewport.
-	page, err := browser.NewPage(playwright.BrowserNewPageOptions{NoViewport: playwright.Bool(!cfg.Headless)})
+	// fixed default viewport. A recording fixes the viewport to the video.
+	pageOpts := playwright.BrowserNewPageOptions{NoViewport: playwright.Bool(!cfg.Headless)}
+	if cfg.VideoDir != "" {
+		size := &playwright.Size{Width: windowWidth, Height: windowHeight}
+		pageOpts = playwright.BrowserNewPageOptions{
+			Viewport:    size,
+			RecordVideo: &playwright.RecordVideo{Dir: playwright.String(filepath.Join(cfg.VideoDir, "raw", name)), Size: size},
+		}
+	}
+	page, err := browser.NewPage(pageOpts)
 	if err != nil {
 		return nil, fmt.Errorf("demo: open page: %w", err)
 	}

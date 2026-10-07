@@ -26,13 +26,14 @@ import (
 
 	"github.com/redscaresu/itsm/internal/demo"
 	"github.com/redscaresu/itsm/internal/demodata"
+	"github.com/redscaresu/itsm/internal/jev/jevfake"
 )
 
-// Defaults from HLD 8.
+// Defaults from HLD 8, slowed so an audience can read each scene.
 const (
 	defaultPort    = "8080"
-	defaultSlowMo  = 600 * time.Millisecond
-	defaultPause   = 2500 * time.Millisecond
+	defaultSlowMo  = 1000 * time.Millisecond
+	defaultPause   = 5000 * time.Millisecond
 	defaultBin     = "bin/itsm"
 	installCommand = "install"
 )
@@ -75,10 +76,19 @@ func run(ctx context.Context, w io.Writer, args []string, getenv func(string) st
 	if baseURL == "" {
 		port := cmp.Or(getenv("PORT"), defaultPort)
 		baseURL = "http://localhost:" + port
-		if getenv("TYPESAFE_API_KEY") == "" {
+		env := []string{"PORT=" + port}
+		switch {
+		case getenv("DEMO_VIDEO_DIR") != "":
+			// A recording replays live jev's recorded answers, so the video
+			// is the same every time and needs no key.
+			fake := jevfake.New()
+			defer fake.Close()
+			fake.Script(demodata.Script(tickets))
+			env = append(env, "TYPESAFE_BASE_URL="+fake.URL, "TYPESAFE_API_KEY=fake")
+		case getenv("TYPESAFE_API_KEY") == "":
 			return errors.New("demo: TYPESAFE_API_KEY is not set; run typesafe-key first, or set DEMO_BASE_URL")
 		}
-		srv, err := demo.StartServer(ctx, *bin, baseURL, []string{"PORT=" + port}, w)
+		srv, err := demo.StartServer(ctx, *bin, baseURL, env, w)
 		if err != nil {
 			return fmt.Errorf("%w (run make build first)", err)
 		}
@@ -90,7 +100,10 @@ func run(ctx context.Context, w io.Writer, args []string, getenv func(string) st
 		Tickets: tickets,
 		SlowMo:  slowMo,
 		Pause:   pause,
-		Logf:    func(f string, a ...any) { _, _ = fmt.Fprintf(w, f+"\n", a...) },
+		// A recording runs headless, so the video is the fixed window size.
+		Headless: getenv("DEMO_VIDEO_DIR") != "",
+		VideoDir: getenv("DEMO_VIDEO_DIR"),
+		Logf:     func(f string, a ...any) { _, _ = fmt.Fprintf(w, f+"\n", a...) },
 	})
 	return err
 }
