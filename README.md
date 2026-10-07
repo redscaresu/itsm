@@ -10,6 +10,70 @@ when triage can't decide, pre-written follow-up questions.
 
 Tickets are kept in memory and are lost on restart.
 
+## ▶ The demo
+
+![The demo: the customer raises six tickets on the left; the agent triages, reviews and acts on them on the right](docs/demo.gif)
+
+*Recorded with `make demo-gif`, which replays the answers live jev gave
+for these tickets, so the latencies show as 0 ms. The script of what happens
+is [below](#what-you-will-see).*
+
+Run it yourself:
+
+```sh
+typesafe-key && make demo
+```
+
+Two browser windows open side by side and play the whole story by
+themselves in about **two minutes**. The **customer** screen is on the left,
+the **agent** screen on the right. Nothing needs typing and nothing needs
+clicking. First time on this machine? Follow [Getting started](#getting-started).
+
+### What you will see
+
+The customer is always *Sam Taylor*. Every ticket appears on the agent's
+queue as soon as it is raised, grey while jev is triaging, then it flips to
+its team and severity.
+
+| # | Left: customer types… | Right: agent sees… |
+|---|---|---|
+| 1 | The empty "raise a ticket" form. | An empty queue. |
+| 2 | **Leeds office network down** — *"Nobody in Leeds office can get on the network since 9am."* | **Network, Sev 2.** One whole office is blocked. |
+| 3 | **nDelius down nationally** — *"nDelius is down for everyone across the country."* | **Applications, Sev 1.** National outage: the top severity. |
+| 4 | **Firewall change for print server** — *"Please open port 443 on the Leeds firewall…"* | **Network, Sev 4.** A change request, not a fault, so it is low. |
+| 5 | Ticket 4: **Everything is broken** — *"Everything is broken, please help."* | **Service Desk, Sev 3, flagged for review.** jev can't tell where or what. |
+|   | …the customer is asked three follow-up questions and answers them: *Bristol office*, *OASys*, *just me*. | Triage runs again and re-routes it to **Applications, Sev 3**. Still flagged. |
+| 6 | **Locked out after MFA reset** — *"…can't log in to anything."* | **Identity and Access, Sev 3.** |
+| 7 | **Laptop screen flickers** — *"…now and then. Not urgent."* | **End User Compute, Sev 4.** |
+| 8 | — | The **decision feed**: one line per triage decision, newest last. |
+| 9 | — | The **Why** panel for "Everything is broken": both triage runs side by side, with jev's confidence in each team, scope and kind, and the severity rule that fired. |
+| 10 | — | The agent **marks it reviewed** (only a human clears the flag), **reassigns** the laptop ticket to Applications, **closes** the Leeds network ticket, and returns to the queue. |
+
+The point of scene 5: when the machine isn't sure, it asks the customer the
+right questions instead of guessing, and it leaves a human the final say.
+
+### Tuning the demo
+
+The demo talks to live jev, so the team and severity it shows can drift from
+the table above. It only waits for each ticket to leave triaging; it never
+checks the answer. The `e2e` test (see [Test](#test)) checks them against a
+fake jev.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `DEMO_SLOWMO_MS` | `1000` | Delay before each browser action. Raise it to slow typing and clicks. |
+| `DEMO_PAUSE_MS` | `5000` | Pause between scenes. Raise it to give the audience longer to read. |
+| `DEMO_BASE_URL` | unset | Use a server that is already running instead of starting one. |
+
+For example, an even slower run: `DEMO_PAUSE_MS=8000 make demo`.
+
+`make demo` builds `bin/itsm`, starts it, waits for `/healthz`, plays the
+scenes, and stops the server. The windows are sized to split the display.
+
+To re-record the GIF above after a UI change, run `make demo-gif` (needs
+`ffmpeg`; no key). It plays the same scenes headless against a fake jev,
+records each window, and stitches them side by side into `docs/demo.gif`.
+
 ## Getting started
 
 From nothing to the running demo on a Mac. Paste each command on its own
@@ -80,7 +144,8 @@ line. Steps 1–4 are once per machine.
    ```
 
    Two Chromium windows open side by side and play the ten scenes in about
-   70 seconds. Don't click in them while it runs.
+   two minutes (see [What you will see](#what-you-will-see)). Don't click
+   in them while it runs.
 
 To use the portal by hand instead of the scripted demo: `typesafe-key`, then
 `make run`, then open the two URLs above.
@@ -124,7 +189,8 @@ live test. It is per-terminal-window: a new tab needs it again.
 
 ```sh
 make check            # CI's check job: vet, test -race, golangci-lint
-make e2e              # CI's e2e job: headless walkthrough (needs make demo-install)
+make e2e              # CI's e2e job: the demo's ten scenes, headless, against a fake jev
+                      # (needs make demo-install); checks every team and severity
 go test -race ./...   # unit and end-to-end tests; no key, no network
 ```
 
@@ -157,48 +223,3 @@ Fix a threshold (`internal/triage/thresholds.go`) or a question
 expected outcome, and what live jev answered (replayed by the fake).
 `internal/demodata` reads it. The live test and the end-to-end tests both use
 this one file, so the typed text and the expected outcomes cannot drift apart.
-
-## Demo
-
-`make demo` plays the demo script in two Chromium windows: the customer
-screen on the left, the agent screen on the right. It raises the six demo
-tickets, answers ticket 4's follow-up questions, shows the decision feed and
-ticket 4's Why panel, marks ticket 4 reviewed (triage flags a ticket for a
-human and only an agent clears it), then reassigns ticket 6 and closes ticket 1. It is
-slowed down so an audience can follow it. Nothing needs typing.
-
-Install the browser once per machine. This downloads the Playwright driver
-(with its own Node.js runtime, not npm) and Chromium, and takes a few
-minutes:
-
-```sh
-make demo-install
-```
-
-Then, with the key loaded:
-
-```sh
-typesafe-key
-make demo
-```
-
-`make demo` builds `bin/itsm`, starts it, waits for `/healthz`, plays the
-scenes, and stops the server. It talks to live jev, so it waits only for each
-ticket to leave `triaging`; it never checks the team or severity.
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `DEMO_BASE_URL` | unset | Use a server that is already running instead of starting one. |
-| `DEMO_SLOWMO_MS` | `600` | Delay before each browser action. |
-| `DEMO_PAUSE_MS` | `2500` | Pause between scenes. |
-
-The windows are placed side by side and sized to the display.
-
-The same scenes run headless, with a fake jev, in the `e2e` test. That test
-checks each ticket's team and severity, so a renamed button or field fails
-in CI rather than in front of an audience:
-
-```sh
-make demo-install     # once
-go test -tags e2e ./internal/demo/...
-```
