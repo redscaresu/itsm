@@ -1,0 +1,3 @@
+# swarm-dev settings (swarm.sh config prints them)
+# The owner chose agent merging on 2026-10-10; owner-only steps stay lead stories.
+merge = agent
