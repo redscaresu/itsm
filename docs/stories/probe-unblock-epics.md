@@ -1,0 +1,14 @@
+---
+kind: lead
+status: blocked
+blocked_by: [probe-run-and-read, probe-answer-and-removal]
+epic: bundle-scorecard-probe
+depends_on: [probe-run-and-read, probe-answer-and-removal]
+touches: [docs/epics/bundle-gates.md, docs/epics/bundle-templates-readme.md, docs/epics/public-only-gates.md, docs/hld/2026-10-09-harden-the-ci-pipeline-for-going-public.md, docs/epics/bundle-scorecard-probe.md]
+---
+
+# Apply the probe answer to the waiting epics and set them active
+
+After probe-answer-and-removal merges. Lead resolves the decision-6 conditionals with the recorded answer and choice: bundle-gates.md:6 (scorecard job in or out), bundle-templates-readme.md:8 (templates/scorecard.yml in or out), public-only-gates.md:7 (template copy, or `scorecard: true` + `id-token: write`); and bundle-gates.md:8's dogfood ref `./.github/workflows/security.yml` becomes `$/.github/workflows/security.yml` (same zizmor self-repository finding). **You:** set bundle-gates, bundle-templates-readme and public-only-gates to `active` on the board; the lead sees it there and commits the edits with the status change in one itsm docs PR. Revised: set only bundle-gates `active`; bundle-templates-readme and public-only-gates stay `later` (their own dependencies activate them), with the answer applied. Under REFUTED+decision 6 reconcile every clause that assumes five gates or a Scorecard template: bundle-gates.md (input `scorecard` default false, job `scorecard` with {contents: read, id-token: write}, check `security / scorecard`, a dogfood caller with `scorecard: true` + id-token: write), bundle-templates-readme.md (five templates, no templates/scorecard.yml, README shows id-token for consumers enabling scorecard), public-only-gates.md (caller input path, check `security / scorecard`, no template equality). Use the workflow-ref form the green probe run actually used. Also update the HLD (decision 6's expected outcome, the HLD:143-147 note, the open question, the Epics list statuses) and bundle-scorecard-probe.md's Done when (`$/` form, probe files always removed).
+
+**Done when:** `grep -c 'decision 6'` is 0 in each of docs/epics/bundle-gates.md, bundle-templates-readme.md, public-only-gates.md and each names the chosen Scorecard path (template, or bundle job `scorecard`); bundle-gates.md contains no `./.github/workflows/security.yml`; bundle-gates has `status: active` and the other two stay `later`; github-actions main has no .github/workflows/probe-scorecard.yml; the itsm PR changes only those three files. Under REFUTED+decision 6, bundle-gates.md names input `scorecard`, check `security / scorecard` and its job permissions; bundle-templates-readme.md's `ls templates/` omits scorecard.yml; public-only-gates.md checks `security / scorecard`. The HLD no longer says the expected outcome is VERIFIED and lists the probe's answer with its run URL.
