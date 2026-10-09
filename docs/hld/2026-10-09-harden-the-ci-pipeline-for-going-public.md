@@ -384,3 +384,30 @@ Each step ships on its own and leaves both repos green, given the order below.
 - Whether Scorecard really cannot publish from a reusable workflow (probe in Rollout 1).
 
 ## Epics
+
+In rollout order. Decomposed 2026-10-09; the owner approved the epics and the decisions below.
+
+- [[bundle-scorecard-probe]] (active)
+- [[pin-ci-actions]] (active)
+- [[gosec-lint]] (active)
+- [[bundle-gates]] (later)
+- [[bundle-templates-readme]] (later)
+- [[adopt-bundle-private]] (active)
+- [[tag-v1-0-0]] (active)
+- [[go-public]] (active)
+- [[public-only-gates]] (later)
+
+### Decisions taken at decomposition
+
+These correct the text above where they disagree with it.
+
+1. **Where does the dogfood fixture's go.mod live? HLD:169 gates govulncheck on `hashFiles('go.mod') != ''` (repo root) but HLD:231 puts it at `fixture/go.mod`, and HLD:192-195 forbids a directory input.** `go.mod` at the github-actions root (module `github.com/redscaresu/github-actions`), `fixture/main.go` as its only package; local check `go vet ./...`. No new input. Alternative rejected: a `go-directory` input is a knob no consumer has asked for. (corrects HLD lines 169, 192-195, 231-232, 382)
+2. **Should `scorecard` be a required status check?** No. The template runs only on push:main, schedule and branch_protection_rule (goldfinger scorecard.yml:9-14); a required check no PR reports blocks every merge (HLD:267-268). Scorecard is a post-merge detector. Delete 'and `scorecard` once it exists' from Enforcement and 'and `scorecard`' from Rollout 6. (corrects HLD lines 265, 368-369)
+3. **Which step adds `security / codeql` to the ruleset?** Rollout 5 (go-public) requires all five `security / *` from the first ruleset; the skipped codeql job reports success until Rollout 6 turns it on. Rollout 6 changes nothing in the ruleset. (corrects HLD lines 366-369)
+4. **What do template headers and the caller comment say before v1.0.0 exists, and who rewrites them?** Shared `templates/` carry `template: <name>` with no version (the repo copy cannot know its future tag). Consumer copies carry `template: <name> @<version>` and the caller `# <version>`, both `unreleased` until the tag; tag-v1-0-0's one itsm PR rewrites all five to `v1.0.0`. Later consumers write the tag they copied from. (corrects HLD lines 198-199, 361)
+5. **'Six copied files' names five files plus a Makefile target, and Rollout 3 copies five. Which is it?** Keep six: the sixth is `templates/hooks.mk` (the `hooks` target), applied as a Makefile edit in a consumer that has one. Rollout 3 copies dependabot.yml, gitleaks.toml, SECURITY.md, pre-commit and applies hooks.mk; scorecard.yml waits for Rollout 6. (corrects HLD lines 60-61, 197-208, 246, 358-359)
+6. **If the probe shows Scorecard can publish from a reusable workflow, what changes and who owns it?** Follow HLD:147: bundle-gates adds job `scorecard` behind input `scorecard` (default false, since it needs `id-token: write` from the caller); `templates/scorecard.yml` is dropped; README shows the extra permission for consumers that enable it; public-only-gates' second story sets `scorecard: true` and `id-token: write` (check name `security / scorecard`). The owner confirms in bundle-scorecard-probe's your_part before bundle-gates goes active. Expected outcome is VERIFIED, in which case nothing changes. (corrects HLD lines 143-147, 200-201, 310-312, 368-370)
+7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 273-277)
+8. **May the public shared repo hold a never-merged negative-control PR with a synthetic secret and a vulnerable module? Its `refs/pull` ref is permanent and public.** Yes: it is the only proof the gates fire (Goal 4). The value is a documented example format, not a credential, and not a partner pattern (push protection is on in github-actions and would block one); the module is an old public release. Title it 'negative control: do not merge'; the owner closes it. (corrects HLD lines 57-59, 228-237)
+9. **Does the README get a Scorecard badge, and when?** Yes, in the scorecard story's PR: the badge resolves after the first publish, which happens on the push:main run right after merge, not a week later. (corrects HLD lines 369-370)
+10. **Who adds LICENSE?** An agent PR, the first story of go-public; the owner reads and merges. Only the flip and Settings are owner steps. (corrects HLD lines 362)
