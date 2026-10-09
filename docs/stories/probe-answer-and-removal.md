@@ -1,7 +1,8 @@
 ---
 kind: docs
 repo: github-actions
-status: ready
+status: review
+prs: https://github.com/redscaresu/github-actions/pull/2
 epic: bundle-scorecard-probe
 depends_on: [probe-run-and-read]
 touches: [.github/workflows/probe-scorecard.yml, .github/workflows/scorecard.yml, README.md]
