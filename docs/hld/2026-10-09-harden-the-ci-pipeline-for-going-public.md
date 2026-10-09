@@ -392,9 +392,9 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - [[gosec-lint]] (active)
 - [[bundle-gates]] (later)
 - [[bundle-templates-readme]] (later)
-- [[adopt-bundle-private]] (active)
-- [[tag-v1-0-0]] (active)
-- [[go-public]] (active)
+- [[adopt-bundle-private]] (later)
+- [[tag-v1-0-0]] (later)
+- [[go-public]] (later)
 - [[public-only-gates]] (later)
 
 ### Decisions taken at decomposition

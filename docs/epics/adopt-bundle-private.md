@@ -1,5 +1,5 @@
 ---
-status: active
+status: later
 hld: 2026-10-09-harden-the-ci-pipeline-for-going-public
 check: make check
 ---
