@@ -130,8 +130,8 @@ public consumers: a public repo cannot call a private repo's reusable workflow.
 - The called workflow cannot widen `permissions:`; the caller job must grant what the gate needs
   (`security-events: write` for CodeQL's SARIF upload). Jobs inside the called workflow can
   narrow it back.
-- A caller's workflow-level `env:` does **not** reach the called workflow. Anything like
-  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` must be set inside the bundle.
+- A caller's workflow-level `env:` does **not** reach the called workflow. The bundle sets no
+  `env:` at all: every pinned JS action already declares node24 (bundle-gates, survey fact 11).
 - Triggers stay in the caller. The called workflow sees the caller's `github.event`, so a
   `dependency-review` job works when the caller runs it on `pull_request`.
 - **Code scanning (CodeQL SARIF upload, Scorecard's `upload-sarif`) needs a public repo or a
@@ -148,7 +148,7 @@ public consumers: a public repo cannot call a private repo's reusable workflow.
   *Probe answer (2026-10-10): REFUTED.* Scorecard published from a job inside an
   `on: workflow_call` workflow (https://github.com/redscaresu/github-actions/actions/runs/38005404874;
   both API hosts return `repo.commit` = the merge SHA, score 4.1). The owner confirmed
-  decision 6 on 2026-10-10: Scorecard is the bundle job `scorecard`.
+  decision 6 on 2026-10-10: Scorecard is in the bundle as its own reusable `scorecard.yml`.
 - `dependabot.yml`, `.gitleaks.toml`, `.golangci.yml` and `SECURITY.md` are per-repo files, not
   workflows; they can only be templated, not called.
 
@@ -170,7 +170,7 @@ grant the union) and an `if:` that selects the events the gate is meaningful on:
 |---|---|---|---|---|
 | `zizmor` | push, PR | `contents: read` | no | `zizmor.yml` |
 | `gitleaks` | push, PR, schedule | `contents: read`, `fetch-depth: 0`, `--redact` | no | `ci.yml` gitleaks job + `.gitleaks.toml` |
-| `govulncheck` | push, PR, schedule | `contents: read` | yes, `hashFiles('go.mod') != ''` | `ci.yml` govulncheck job |
+| `govulncheck` | push, PR, schedule | `contents: read` | yes, step-level `if: hashFiles('go.mod') != ''` (not available in a job `if:`) | `ci.yml` govulncheck job |
 | `codeql` | push, PR, schedule | `security-events: write` | language from input, default `go` | `codeql.yml` |
 | `dependency-review` | PR only | `contents: read` | no | `dependency-review.yml`, guard changed (below) |
 
@@ -189,8 +189,8 @@ Rules for the bundle:
   exactly the misconfiguration the gate exists to catch. The graph is on by default for public
   repos, so on `github.event.repository.private == false` the skip path becomes an error; private
   consumers keep the notice. Transient errors still fail closed.
-- **The bundle sets its own `env`** (`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`), since a caller's does
-  not reach it.
+- **The bundle has no `env:` or `defaults:` at any level**: every pinned JS action declares node24,
+  and Scorecard refuses to publish from a workflow with workflow-level `env:` or `defaults:`.
 - **No `pull_request_target`, no `workflow_run`** in the bundle or in any consumer caller; zizmor's
   `dangerous-triggers` audit enforces it once zizmor is a required check.
 - Inputs are the few knobs a consumer actually needs: `codeql-languages` (default `go`),
@@ -202,8 +202,8 @@ Not in the bundle, shipped as `templates/` to copy in (six files, five after dec
 each template carries a `# template: <name> @vX.Y.Z` header so a consumer can see what it has):
 
 - **`scorecard.yml`**: cannot publish from a reusable workflow (Current state). The one per-repo
-  workflow. *Removed by decision 6 (probe REFUTED): five templates; Scorecard is the bundle job
-  `scorecard`.*
+  workflow. *Removed by decision 6 (probe REFUTED): five templates; Scorecard is the bundle's
+  reusable `.github/workflows/scorecard.yml`, called from its own per-repo caller file.*
 - **`dependabot.yml`**: gomod + github-actions, weekly, grouped, no auto-merge. The
   github-actions ecosystem entry is what keeps the bundle's own ref fresh.
 - **`gitleaks.toml`**: default ruleset plus the `go.sum` allowlist. No TypeSafe-specific rule:
@@ -352,7 +352,7 @@ public. The response to any post-exposure hit is rotation (SECURITY.md).
 
 Each step ships on its own and leaves both repos green, given the order below.
 
-1. **`redscaresu/github-actions`: the bundle, untagged.** `security.yml` with the five jobs (six with decision 6's `scorecard`), the
+1. **`redscaresu/github-actions`: the bundle, untagged.** `security.yml` with the five jobs, plus the reusable `scorecard.yml` (decision 6), the
    Go fixture, `templates/` (six files; five after decision 6), the dogfood `ci.yml`, a README that shows the one-job
    caller. Probe the Scorecard-in-reusable question while here. Merge to `main` on a green
    dogfood; no tag yet.
@@ -372,7 +372,7 @@ Each step ships on its own and leaves both repos green, given the order below.
    "Require approval for first-time contributors"; ruleset on `main` requiring `check`, `e2e`
    and the five `security / *` checks.
 6. **itsm: the public-only gates.** Flip `codeql: false` off in the caller, copy in
-   `scorecard.yml` (*decision 6: set `scorecard: true` + `id-token: write` in the caller instead*),
+   `scorecard.yml` (*decision 6: a `.github/workflows/scorecard.yml` caller of the bundle's reusable `scorecard.yml` instead; it alone grants `id-token: write`*),
    add `security / codeql` and `scorecard` to the required checks. The Scorecard
    badge appears after its first scheduled run.
 7. **Later, not here:** goldfinger moves its gates onto the bundle and deletes its copies; other
@@ -398,7 +398,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - bundle-scorecard-probe (done: REFUTED, Scorecard is a bundle job)
 - [[pin-ci-actions]] (active)
 - [[gosec-lint]] (active)
-- [[bundle-gates]] (active)
+- bundle-gates (done 2026-10-10: five gates in `security.yml`, Scorecard in reusable `scorecard.yml`, dogfood push run https://github.com/redscaresu/github-actions/actions/runs/38046711288; negative control https://github.com/redscaresu/github-actions/pull/10 closed unmerged; with the dependency graph turned off, `security / dependency-review` failed with the public-repo `::error::`)
 - [[bundle-templates-readme]] (later)
 - [[adopt-bundle-private]] (later)
 - [[tag-v1-0-0]] (later)
@@ -414,7 +414,7 @@ These correct the text above where they disagree with it.
 3. **Which step adds `security / codeql` to the ruleset?** Rollout 5 (go-public) requires all five `security / *` from the first ruleset; the skipped codeql job reports success until Rollout 6 turns it on. Rollout 6 changes nothing in the ruleset. (corrects HLD lines 366-369)
 4. **What do template headers and the caller comment say before v1.0.0 exists, and who rewrites them?** Shared `templates/` carry `template: <name>` with no version (the repo copy cannot know its future tag). Consumer copies carry `template: <name> @<version>` and the caller `# <version>`, both `unreleased` until the tag; tag-v1-0-0's one itsm PR rewrites all five to `v1.0.0`. Later consumers write the tag they copied from. (corrects HLD lines 198-199, 361)
 5. **'Six copied files' names five files plus a Makefile target, and Rollout 3 copies five. Which is it?** Keep six: the sixth is `templates/hooks.mk` (the `hooks` target), applied as a Makefile edit in a consumer that has one. Rollout 3 copies dependabot.yml, gitleaks.toml, SECURITY.md, pre-commit and applies hooks.mk; scorecard.yml waits for Rollout 6. Decision 6 later removed `templates/scorecard.yml`, leaving five. (corrects HLD lines 60-61, 197-208, 246, 358-359)
-6. **If the probe shows Scorecard can publish from a reusable workflow, what changes and who owns it?** Follow HLD:147: bundle-gates adds job `scorecard` behind input `scorecard` (default false, since it needs `id-token: write` from the caller); `templates/scorecard.yml` is dropped; README shows the extra permission for consumers that enable it; public-only-gates' second story sets `scorecard: true` and `id-token: write` (check name `security / scorecard`). The owner confirms in bundle-scorecard-probe's your_part before bundle-gates goes active. Probe answer: REFUTED (https://github.com/redscaresu/github-actions/actions/runs/38005404874); the owner confirmed decision 6 on 2026-10-10, so this path applies. (corrects HLD lines 143-147, 200-201, 310-312, 368-370)
+6. **If the probe shows Scorecard can publish from a reusable workflow, what changes and who owns it?** Follow HLD:147: bundle-gates adds a separate reusable `.github/workflows/scorecard.yml` (so `security.yml` callers never grant `id-token: write`); `templates/scorecard.yml` is dropped; README shows the consumer's `.github/workflows/scorecard.yml` caller: `on:` push to main and a weekly schedule only, `permissions: {}`, one job `security` (`name: security`), `uses: redscaresu/github-actions/.github/workflows/scorecard.yml@<sha> # <version>`, `permissions: {contents: read, id-token: write}`; never in a workflow that runs on pull_request; public-only-gates' second story adds that caller (check name `security / scorecard`). The owner confirms in bundle-scorecard-probe's your_part before bundle-gates goes active. Probe answer: REFUTED (https://github.com/redscaresu/github-actions/actions/runs/38005404874); the owner confirmed decision 6 on 2026-10-10, so this path applies. (corrects HLD lines 143-147, 200-201, 310-312, 368-370)
 7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 273-277)
 8. **May the public shared repo hold a never-merged negative-control PR with a synthetic secret and a vulnerable module? Its `refs/pull` ref is permanent and public.** Yes: it is the only proof the gates fire (Goal 4). The value is a documented example format, not a credential, and not a partner pattern (push protection is on in github-actions and would block one); the module is an old public release. Title it 'negative control: do not merge'; the owner closes it. (corrects HLD lines 57-59, 228-237)
 9. **Does the README get a Scorecard badge, and when?** Yes, in the scorecard story's PR: the badge resolves after the first publish, which happens on the push:main run right after merge, not a week later. (corrects HLD lines 369-370)
