@@ -77,7 +77,7 @@ type Run struct {
 
 // Load reads and checks the demo tickets at path.
 func Load(path string) ([]Ticket, error) {
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) // #nosec G304 -- callers pass the constant File or a test fixture; no request input reaches path
 	if err != nil {
 		return nil, fmt.Errorf("demodata: %w", err)
 	}
