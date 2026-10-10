@@ -1,0 +1,16 @@
+---
+kind: code
+repo: github-actions
+status: blocked
+blocked_by: [gate-codeql, code-security-settings]
+epic: bundle-gates
+depends_on: [gate-codeql, code-security-settings]
+touches: [.github/workflows/security.yml]
+risk: high
+---
+
+# Add the dependency-review gate with the fail-closed public-repo guard, stub-curl tested
+
+Blocked until code-security-settings records a 200 compare. Adds inputs `dependency-review` (boolean, default true) and `dependency-review-fail-on` (string, default `moderate`). Job `dependency-review`: `if: inputs.dependency-review && github.event_name == 'pull_request'` (skipped on push, HLD:175); `permissions: {contents: read}`. Guard step `id: guard`: goldfinger dependency-review.yml:46-80 verbatim (curl with `-D "$hdr" -o "$body" -w '%{http_code}'` at :55-59, x-ratelimit-remaining read at :66-67), with one change: step env adds `IS_PRIVATE: ${{ github.event.repository.private }}`, and the 403 non-rate-limited branch, when `[ "$IS_PRIVATE" = "false" ]`, prints `::error::`, `cat "$body"`, `exit 1`; otherwise goldfinger's `run=false` + `::notice::`. Event values reach the script only through step env. Then dependency-review-action with `if: steps.guard.outputs.run == 'true'`, `fail-on-severity: ${{ inputs.dependency-review-fail-on }}`, comment-summary-in-pr left at never. Stub-curl test before the PR: extract the committed guard (`python3 -c` with PyYAML: `.jobs['dependency-review'].steps`, the one with `id: guard`, its `run`), run it with `bash -e` (the Actions default) and GITHUB_OUTPUT set to a temp file, with a PATH-shim `curl` that honours `-D`, `-o` and `-w` and writes status, an `x-ratelimit-remaining` header and a body for: 200; 403 IS_PRIVATE=false; 403 IS_PRIVATE=true; 403 with remaining 0; 500. The script and its output go in the PR body. Red proof: one commit adds `require golang.org/x/text v0.3.6` and its go.sum lines; read the run; drop it by force-push.
+
+**Done when:** The epic's Checks pass at the PR head. Latest PR run: `security / dependency-review` and `security-codeql-off / dependency-review` success, the action step success (not skipped) and the guard log `HTTP 200`; all five `security / *` success. Stub results in the PR body, and the same when the lead re-runs that script against the PR head's security.yml: 200 → exit 0, `run=true`; 403 public → exit 1, `::error::`, no `run=` line; 403 private → exit 0, `::notice::`, `run=false`; rate-limited → exit 1; 500 → exit 1. Red-proof run (URL in PR body): the dependency-review-action step fails and its log names GHSA-ppp9-7jff-5vj2; the red SHA is not in `main`'s history after merge. The main ci.yml push run after merge is green with `security / dependency-review` skipped. The guard's `run:` contains no `${{`. Inputs exactly codeql-languages (default go), dependency-review-fail-on (default moderate), booleans zizmor, gitleaks, govulncheck, codeql, dependency-review (default true). The job grants exactly {contents: read}.
