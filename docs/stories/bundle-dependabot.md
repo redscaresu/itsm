@@ -1,8 +1,7 @@
 ---
 kind: chore
 repo: github-actions
-status: blocked
-blocked_by: [ruleset-and-pinning]
+status: ready
 epic: bundle-gates
 depends_on: [ruleset-and-pinning]
 touches: [.github/dependabot.yml]
