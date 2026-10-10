@@ -14,4 +14,4 @@ check: make check
 
 **Depends on:** go-public. **Areas:** .github/workflows/security.yml, README.md.
 
-**Your part:** Read and merge the codeql PR, then the scorecard PR (HLD:273-277). Nothing in Settings. The lead verifies with the API calls in Done when.
+**Your part:** Read and merge the codeql PR, then the scorecard PR (HLD:278-284). Nothing in Settings. The lead verifies with the API calls in Done when.

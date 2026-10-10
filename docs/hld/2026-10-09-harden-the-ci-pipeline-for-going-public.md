@@ -111,11 +111,13 @@ no repository secret exists. Missing versus goldfinger, from its `.github/` at `
 | `release.yml` (binaries, signing) | n/a: itsm ships no binaries |
 
 **gosec on itsm today** (reviewer, gosec v2.29.0, `-tags e2e,live`, production files only): two
-findings. G304 at `internal/demodata/demodata.go:80` (`os.ReadFile` of a caller-supplied path,
-the demo tickets file from a flag) and G710 open redirect at
+findings. G304 at `internal/demodata/demodata.go:80` (`os.ReadFile` of a path every caller
+sets to the constant demodata.File or a test fixture) and G710 open redirect at
 `internal/server/handlers_customer.go:263`. The second is a false positive: the target is
 `ticketPath(id)` = `"/tickets/" + id` (`handlers_customer.go:131`), which cannot start with `//`.
-Both get a `//nosec` with that reason. Nothing in `cmd/`.
+Both get a trailing `// #nosec CODE -- reason`. Nothing in `cmd/`. *Done by gosec-lint
+(https://github.com/redscaresu/itsm/pull/24): gosec runs in the lint job and requires a reason on
+every `#nosec`. golangci-lint v2.14.0's gosec ignores bare `//nosec`; only `#nosec` suppresses.*
 
 **`redscaresu/github-actions` today:** one commit (`99bd0b1 Initial commit`), `LICENSE`
 (Apache-2.0) and a two-line `README.md`. No workflows, no Go code. Public, which is required for
@@ -273,12 +275,12 @@ Every gate is a **required status check by exact name** (Rollout 4): `check`, `e
 PR's workflow file leaves the check "expected" and the PR blocked. That is what stops a PR from
 deleting or redirecting its own gate.
 
-What a PR *can* still do is suppress: `//nosec CODE -- reason` for gosec, a `.gitleaks.toml`
+What a PR *can* still do is suppress: `// #nosec CODE -- reason`, `//nolint` or `//gosec:disable` for gosec, a `.gitleaks.toml`
 allowlist entry, `# zizmor: ignore[rule]`, a `codeql` opt-out input. govulncheck has no
 suppression; an upstream fix or a dependency bump is the only exit. GitHub's "require approvals"
 cannot be used with one maintainer (you cannot approve your own PR), so the review rule is written
 down instead: **the owner reads every diff touching `.github/`, `.gitleaks.toml`, `.golangci.yml`
-or adding `//nosec` / `zizmor: ignore` before merging**, and a fork PR that touches them is not
+or adding `#nosec` / `//nolint` / `//gosec:disable` / `zizmor: ignore` before merging**, and a fork PR that touches them is not
 merged without that read. CODEOWNERS is not used: it only bites with required review.
 
 Which runs gate and which detect: on `pull_request` every job blocks the merge. CodeQL blocks
@@ -397,7 +399,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 
 - bundle-scorecard-probe (done: REFUTED, Scorecard is a bundle job)
 - [[pin-ci-actions]] (active)
-- [[gosec-lint]] (active)
+- gosec-lint (done 2026-10-10: https://github.com/redscaresu/itsm/pull/24)
 - bundle-gates (done 2026-10-10: five gates in `security.yml`, Scorecard in reusable `scorecard.yml`, dogfood push run https://github.com/redscaresu/github-actions/actions/runs/38046711288; negative control https://github.com/redscaresu/github-actions/pull/10 closed unmerged; with the dependency graph turned off, `security / dependency-review` failed with the public-repo `::error::`)
 - [[bundle-templates-readme]] (later)
 - [[adopt-bundle-private]] (later)
@@ -415,7 +417,7 @@ These correct the text above where they disagree with it.
 4. **What do template headers and the caller comment say before v1.0.0 exists, and who rewrites them?** Shared `templates/` carry `template: <name>` with no version (the repo copy cannot know its future tag). Consumer copies carry `template: <name> @<version>` and the caller `# <version>`, both `unreleased` until the tag; tag-v1-0-0's one itsm PR rewrites all five to `v1.0.0`. Later consumers write the tag they copied from. (corrects HLD lines 198-199, 361)
 5. **'Six copied files' names five files plus a Makefile target, and Rollout 3 copies five. Which is it?** Keep six: the sixth is `templates/hooks.mk` (the `hooks` target), applied as a Makefile edit in a consumer that has one. Rollout 3 copies dependabot.yml, gitleaks.toml, SECURITY.md, pre-commit and applies hooks.mk; scorecard.yml waits for Rollout 6. Decision 6 later removed `templates/scorecard.yml`, leaving five. (corrects HLD lines 60-61, 197-208, 246, 358-359)
 6. **If the probe shows Scorecard can publish from a reusable workflow, what changes and who owns it?** Follow HLD:147: bundle-gates adds a separate reusable `.github/workflows/scorecard.yml` (so `security.yml` callers never grant `id-token: write`); `templates/scorecard.yml` is dropped; README shows the consumer's `.github/workflows/scorecard.yml` caller: `on:` push to main and a weekly schedule only, `permissions: {}`, one job `security` (`name: security`), `uses: redscaresu/github-actions/.github/workflows/scorecard.yml@<sha> # <version>`, `permissions: {contents: read, id-token: write}`; never in a workflow that runs on pull_request; public-only-gates' second story adds that caller (check name `security / scorecard`). The owner confirms in bundle-scorecard-probe's your_part before bundle-gates goes active. Probe answer: REFUTED (https://github.com/redscaresu/github-actions/actions/runs/38005404874); the owner confirmed decision 6 on 2026-10-10, so this path applies. (corrects HLD lines 143-147, 200-201, 310-312, 368-370)
-7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 273-277)
+7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 278-284)
 8. **May the public shared repo hold a never-merged negative-control PR with a synthetic secret and a vulnerable module? Its `refs/pull` ref is permanent and public.** Yes: it is the only proof the gates fire (Goal 4). The value is a documented example format, not a credential, and not a partner pattern (push protection is on in github-actions and would block one); the module is an old public release. Title it 'negative control: do not merge'; the owner closes it. (corrects HLD lines 57-59, 228-237)
 9. **Does the README get a Scorecard badge, and when?** Yes, in the scorecard story's PR: the badge resolves after the first publish, which happens on the push:main run right after merge, not a week later. (corrects HLD lines 369-370)
 10. **Who adds LICENSE?** An agent PR, the first story of go-public; the owner reads and merges. Only the flip and Settings are owner steps. (corrects HLD lines 362)
