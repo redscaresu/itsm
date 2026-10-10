@@ -1,8 +1,7 @@
 ---
 kind: lead
 repo: github-actions
-status: blocked
-blocked_by: [gate-zizmor]
+status: ready
 epic: bundle-gates
 depends_on: [gate-zizmor]
 touches: []
