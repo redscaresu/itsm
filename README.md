@@ -83,7 +83,8 @@ line. Steps 1–4 are once per machine.
    the same checks as CI):
 
    ```sh
-   brew install go golangci-lint
+   brew install go
+   go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
    ```
 
 2. **Clone and build:**

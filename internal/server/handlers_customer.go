@@ -260,7 +260,7 @@ func handleFollowUp(d deps) http.Handler {
 			d.serverError(w, "record follow-up answers", err)
 		default:
 			d.runner.Start(id)
-			http.Redirect(w, r, ticketPath(id), http.StatusSeeOther)
+			http.Redirect(w, r, ticketPath(id), http.StatusSeeOther) // #nosec G710 -- ticketPath is "/tickets/" + id, so the target is always this host, never //host
 		}
 	})
 }
