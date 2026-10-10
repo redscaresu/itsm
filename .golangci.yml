@@ -10,16 +10,32 @@ linters:
   enable:
     - bodyclose
     - errorlint
+    - gosec
     - misspell
     - noctx
     - revive
     - unconvert
+  settings:
+    gosec:
+      config:
+        global:
+          # A #nosec without a "-- reason" fails lint instead of suppressing.
+          nosec-require-justification: true
   exclusions:
     rules:
       # Tests build requests against local test servers; a context adds nothing.
       - path: _test\.go
         linters:
           - noctx
+      # build-tags e2e,live lint the e2e harness, where gosec's file and
+      # subprocess checks are noise; production code is what gosec guards.
+      - path: _test\.go
+        linters:
+          - gosec
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 formatters:
   enable:
