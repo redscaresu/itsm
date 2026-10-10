@@ -9,7 +9,7 @@ hld: 2026-10-09-harden-the-ci-pipeline-for-going-public
 
 **Out of scope:** Any github-actions file change (the versioning README is already at X). A release workflow (HLD:225-226). A moving `v1` (HLD:223-224). Re-pinning itsm to a newer SHA.
 
-**Constraints:** Annotated, by hand, from a green dogfood (HLD:59,225-226,360); the tag object's SHA differs from X, so compare the peeled ref, never `git/ref/tags` `.object.sha`. If adoption forced a bundle fix, X is the fixed SHA, not Rollout 1's (HLD:360 says 'the step-1 SHA'). Dependabot opens no PR for a comment-only change, so the rewrite is a hand PR touching `.github/` (owner-read, HLD:273-277,361). MAJOR/MINOR/PATCH rules HLD:216-218.
+**Constraints:** Annotated, by hand, from a green dogfood (HLD:59,225-226,360); the tag object's SHA differs from X, so compare the peeled ref, never `git/ref/tags` `.object.sha`. If adoption forced a bundle fix, X is the fixed SHA, not Rollout 1's (HLD:360 says 'the step-1 SHA'). Dependabot opens no PR for a comment-only change, so the rewrite is a hand PR touching `.github/` (owner-read, HLD:278-284,361). MAJOR/MINOR/PATCH rules HLD:216-218.
 
 **Depends on:** adopt-bundle-private. **Areas:** [github-actions] tags, .github/workflows/security.yml, .github/dependabot.yml, .gitleaks.toml, SECURITY.md, scripts/pre-commit.
 

@@ -14,4 +14,4 @@ check: make check
 
 **Depends on:** none. **Areas:** .github/workflows/ci.yml.
 
-**Your part:** Read the `.github/` diff and merge (HLD:273-277). The lead sees the merge.
+**Your part:** Read the `.github/` diff and merge (HLD:278-284). The lead sees the merge.
