@@ -395,7 +395,7 @@ Each step ships on its own and leaves both repos green, given the order below.
 
 In rollout order. Decomposed 2026-10-09; the owner approved the epics and the decisions below.
 
-- [[bundle-scorecard-probe]] (active)
+- bundle-scorecard-probe (done: REFUTED, Scorecard is a bundle job)
 - [[pin-ci-actions]] (active)
 - [[gosec-lint]] (active)
 - [[bundle-gates]] (active)
