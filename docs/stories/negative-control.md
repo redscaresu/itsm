@@ -1,8 +1,7 @@
 ---
 kind: lead
 repo: github-actions
-status: blocked
-blocked_by: [bundle-dependabot]
+status: ready
 epic: bundle-gates
 depends_on: [bundle-dependabot]
 touches: []
