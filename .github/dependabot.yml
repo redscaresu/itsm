@@ -1,0 +1,31 @@
+# template: dependabot.yml @unreleased
+version: 2
+# Dependabot bumps for this repo. Every bump is a PR that goes through the
+# main ruleset, and the owner reads each one before merging it. Auto-merge is
+# deliberately off.
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      go-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns:
+          - "*"

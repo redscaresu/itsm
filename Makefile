@@ -1,6 +1,6 @@
 GO ?= go
 
-.PHONY: build run test vet lint check demo demo-install demo-gif e2e
+.PHONY: build run test vet lint check demo demo-install demo-gif e2e hooks
 
 build:
 	$(GO) build -o bin/itsm ./cmd/itsm
@@ -22,6 +22,12 @@ lint:
 
 # Everything CI's check job runs. CI also runs the e2e job: 'make e2e'.
 check: vet test lint
+
+# Once per clone: installs scripts/pre-commit, the gitleaks secret scan.
+hooks:
+	cp scripts/pre-commit "$(shell git rev-parse --git-path hooks)/pre-commit"
+	chmod +x "$(shell git rev-parse --git-path hooks)/pre-commit"
+	@echo "Installed $(shell git rev-parse --git-path hooks)/pre-commit"
 
 # The headless walkthrough: real binary + fake jev + Chromium. Needs demo-install.
 e2e:

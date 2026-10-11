@@ -84,6 +84,7 @@ line. Steps 1–4 are once per machine.
 
    ```sh
    brew install go
+   brew install gitleaks
    go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
    ```
 
@@ -94,6 +95,13 @@ line. Steps 1–4 are once per machine.
    ```
    ```sh
    cd itsm && make build
+   ```
+
+   Install the pre-commit hook, which scans each commit for secrets with
+   gitleaks:
+
+   ```sh
+   make hooks
    ```
 
 3. **Store your TypeSafe API key in the Keychain.** Paste the line, press
