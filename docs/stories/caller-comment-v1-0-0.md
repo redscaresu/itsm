@@ -1,7 +1,6 @@
 ---
 kind: chore
-status: blocked
-blocked_by: [push-tag-v1-0-0]
+status: ready
 epic: tag-v1-0-0
 depends_on: [push-tag-v1-0-0]
 touches: [.github/workflows/security.yml, .github/dependabot.yml, .gitleaks.toml, SECURITY.md, scripts/pre-commit, docs/stories/caller-comment-v1-0-0.md]
