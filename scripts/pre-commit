@@ -1,0 +1,15 @@
+#!/bin/sh
+# template: pre-commit @unreleased
+# Pre-commit hook: scan staged changes for secrets with gitleaks.
+# Install with `make hooks`. Bypassable with --no-verify; the CI gitleaks
+# job is the load-bearing backstop.
+set -e
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not on PATH; install it (brew install gitleaks, or see https://github.com/gitleaks/gitleaks#installing)" >&2
+  exit 1
+fi
+
+echo "Scanning for secrets (gitleaks)..."
+gitleaks protect --staged --no-banner
+echo "No secrets detected."
