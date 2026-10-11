@@ -1,0 +1,17 @@
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "41 5 * * 1"
+
+permissions: {}
+
+jobs:
+  security:
+    name: security
+    permissions:
+      contents: read
+      id-token: write # publish the result to the OpenSSF API
+    uses: redscaresu/github-actions/.github/workflows/scorecard.yml@c2c992c0fe67b561b37874af8a429972ad856d69 # v1.0.0
