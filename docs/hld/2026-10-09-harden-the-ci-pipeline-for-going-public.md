@@ -68,7 +68,7 @@ going public (Rollout).
 - Rewriting git history. The scan found nothing to remove.
 - A drift check for the copied templates. Accepted as manual (Design §1).
 - Owner-only repo settings (branch protection, secret scanning, dependency graph, code
-  scanning). Listed in Rollout as the user's steps; nothing in CI can set them.
+  scanning). Listed in Rollout as the user's steps; nothing in CI can set them. *go-public: done by the lead under the owner's 2026-10-11 delegation*
 - Composite actions. Everything here is a whole job, not a step inside someone else's job; a
   reusable workflow is the right unit.
 - A reusable `go-ci.yml` for vet/test/lint. Offered and declined: it is where project-specific
@@ -83,7 +83,7 @@ finds only the deliberate test value `TYPESAFE_API_KEY=e2e-fake-key`
 module hashes. The key never appears in `testdata/demo/tickets.json`. History is clean; no rewrite
 is needed before going public. Caveat: gitleaks' default ruleset is provider patterns plus a
 generic high-entropy rule; the TypeSafe key's shape is not known to the owner, so this scan shows
-the scanner runs, not that it would catch this specific key (Risks).
+the scanner runs, not that it would catch this specific key (Risks). *Pre-flip re-scan (go-public, 2026-10-11): fresh git clone --mirror, gitleaks --log-opts='--all -m', 92 commits, 40 refs incl. 39 refs/pull, 0 leaks*
 
 **What CI does today** (`.github/workflows/ci.yml`, last run 37602917492 green, ~1m46s):
 
@@ -158,7 +158,7 @@ public consumers: a public repo cannot call a private repo's reusable workflow.
 repo: branch protection and rulesets → HTTP 403 "Upgrade to GitHub Pro or make this repository
 public"): branch protection / rulesets on `main`, Dependabot alerts, dependency graph, secret
 scanning + push protection, private vulnerability reporting, code scanning and its Check Failure
-severity. All become available at no cost once the repo is public.
+severity. All become available at no cost once the repo is public. *done: go-public, 2026-10-11*
 
 ## Design
 
@@ -281,7 +281,7 @@ suppression; an upstream fix or a dependency bump is the only exit. GitHub's "re
 cannot be used with one maintainer (you cannot approve your own PR), so the review rule is written
 down instead: **the owner reads every diff touching `.github/`, `.gitleaks.toml`, `.golangci.yml`
 or adding `#nosec` / `//nolint` / `//gosec:disable` / `zizmor: ignore` before merging**, and a fork PR that touches them is not
-merged without that read. CODEOWNERS is not used: it only bites with required review.
+merged without that read. CODEOWNERS is not used: it only bites with required review. *Delegated 2026-10-11: the owner gave these reads to the lead until this HLD closes (go-public); the rule stays the owner's standing rule and SECURITY.md is unchanged.*
 
 Which runs gate and which detect: on `pull_request` every job blocks the merge. CodeQL blocks
 only for alerts at or above the repository's **Check Failure** severity (default `error`,
@@ -372,7 +372,7 @@ Each step ships on its own and leaves both repos green, given the order below.
    secret scanning + push protection, private vulnerability reporting, code scanning **without**
    clicking "default setup", Check Failure severity left at the default; Actions → confirm
    "Require approval for first-time contributors"; ruleset on `main` requiring `check`, `e2e`
-   and the five `security / *` checks.
+   and the five `security / *` checks. *done: go-public, https://github.com/redscaresu/itsm/pull/39; by the lead under the owner's 2026-10-11 delegation; fork-PR approval was a change from the public default (not read before the PUT; GitHub documents first_time_contributors_new_to_github), not a confirm; Dependabot security updates on after the ruleset; Check Failure severity untouched, no API reads it*
 6. **itsm: the public-only gates.** Flip `codeql: false` off in the caller, copy in
    `scorecard.yml` (*decision 6: a `.github/workflows/scorecard.yml` caller of the bundle's reusable `scorecard.yml` instead; it alone grants `id-token: write`*),
    add `security / codeql` and `scorecard` to the required checks. The Scorecard
@@ -404,7 +404,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - bundle-templates-readme (done 2026-10-11: https://github.com/redscaresu/github-actions/pull/12, https://github.com/redscaresu/github-actions/pull/11)
 - adopt-bundle-private (done 2026-10-11: https://github.com/redscaresu/itsm/pull/32)
 - tag-v1-0-0 (done 2026-10-11: https://github.com/redscaresu/itsm/pull/36; v1.0.0 = c2c992c0fe67b561b37874af8a429972ad856d69; Dependabot handling of the tagged pin unverified until its first bump)
-- [[go-public]] (later)
+- go-public (done 2026-10-11: https://github.com/redscaresu/itsm/pull/39; public 2026-10-11T03:26:41Z; mirror scan 0 leaks, 92 commits = rev-list --all, 40 refs incl. 39 refs/pull; secret scanning 0 open alerts; deleted readme-demo-gif, story/gosec-lint-config; branches left: main; ruleset 24875133 requires the seven; throwaway https://github.com/redscaresu/itsm/pull/40 closed unmerged)
 - [[public-only-gates]] (later)
 
 ### Decisions taken at decomposition
@@ -420,4 +420,4 @@ These correct the text above where they disagree with it.
 7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 278-284)
 8. **May the public shared repo hold a never-merged negative-control PR with a synthetic secret and a vulnerable module? Its `refs/pull` ref is permanent and public.** Yes: it is the only proof the gates fire (Goal 4). The value is a documented example format, not a credential, and not a partner pattern (push protection is on in github-actions and would block one); the module is an old public release. Title it 'negative control: do not merge'; the owner closes it. (corrects HLD lines 57-59, 228-237)
 9. **Does the README get a Scorecard badge, and when?** Yes, in the scorecard story's PR: the badge resolves after the first publish, which happens on the push:main run right after merge, not a week later. (corrects HLD lines 369-370)
-10. **Who adds LICENSE?** An agent PR, the first story of go-public; the owner reads and merges. Only the flip and Settings are owner steps. (corrects HLD lines 362)
+10. **Who adds LICENSE?** An agent PR, the first story of go-public; the owner reads and merges. Only the flip and Settings are owner steps. (corrects HLD lines 362) *done: go-public, https://github.com/redscaresu/itsm/pull/39: merged by the conductor (merge = agent; not a sensitive diff); the flip and Settings by the lead under the owner's 2026-10-11 delegation*
