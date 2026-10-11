@@ -26,7 +26,7 @@ public changes the threat model in three ways:
    reachable by SHA. There is no control before the push and no detection after it.
 3. **Dependencies are unwatched.** No Dependabot config, no govulncheck, Dependabot alerts are
    off (`gh api repos/redscaresu/itsm/vulnerability-alerts` → 404). `playwright-go` pulls a
-   driver and Chromium at e2e time (`ci.yml:42`); nothing checks any of it for known
+   driver and Chromium at e2e time (`ci.yml:46`); nothing checks any of it for known
    vulnerabilities.
 
 There is also no `SECURITY.md`, so a researcher who finds something has no private channel, and
@@ -98,11 +98,11 @@ no repository secret exists. Missing versus goldfinger, from its `.github/` at `
 
 | goldfinger has | itsm today |
 |---|---|
-| Actions pinned by SHA with `# vX.Y.Z` comment, `persist-credentials: false` on every checkout | floating tags, default credential persistence |
+| Actions pinned by SHA with `# vX.Y.Z` comment, `persist-credentials: false` on every checkout | floating tags, default credential persistence *done: pin-ci-actions, https://github.com/redscaresu/itsm/pull/27* |
 | `gitleaks` job (full history, `--redact`, `.gitleaks.toml` allowlisting `go.sum`) + `make hooks` pre-commit hook (`scripts/pre-commit`) | none |
 | `govulncheck` job (`go run ...@latest`) | none |
 | `dependabot.yml`: gomod + github-actions, weekly, grouped, no auto-merge | none |
-| `zizmor.yml`: blocking audit of `.github/workflows` (`pipx run --spec zizmor==1.29.0`) | none (local zizmor: 7 findings) |
+| `zizmor.yml`: blocking audit of `.github/workflows` (`pipx run --spec zizmor==1.29.0`) | none (local zizmor: 0 findings after pin-ci-actions, https://github.com/redscaresu/itsm/pull/27) |
 | `codeql.yml`: Go, push/PR/weekly, `security-events: write` | none |
 | `dependency-review.yml`: fails PRs adding a vulnerable dep; skips green when the dependency graph is off | none |
 | `scorecard.yml`: OpenSSF Scorecard, publishes score, weekly | none |
@@ -341,7 +341,7 @@ public. The response to any post-exposure hit is rotation (SECURITY.md).
 - **Cost.** All public repos: Actions minutes are free. CodeQL adds roughly 3 to 5 minutes per
   push on a repo of this size; the weekly schedules add one run each. No paid features.
 - **The e2e job's downloads are unverified.** `go run .../playwright install --with-deps
-  chromium` (`ci.yml:42`) fetches the Playwright driver and Chromium with no checksum, every run.
+  chromium` (`ci.yml:46`) fetches the Playwright driver and Chromium with no checksum, every run.
   No gate here covers it. Accepted: the driver version comes from `go.mod` (govulncheck covers
   the Go side), Chromium comes from Playwright's CDN, and the job runs with a read-only token and
   no secrets, so a compromise reaches nothing but the runner.
@@ -398,7 +398,7 @@ Each step ships on its own and leaves both repos green, given the order below.
 In rollout order. Decomposed 2026-10-09; the owner approved the epics and the decisions below.
 
 - bundle-scorecard-probe (done: REFUTED, Scorecard is a bundle job)
-- [[pin-ci-actions]] (active)
+- pin-ci-actions (done 2026-10-11: https://github.com/redscaresu/itsm/pull/27)
 - gosec-lint (done 2026-10-10: https://github.com/redscaresu/itsm/pull/24)
 - bundle-gates (done 2026-10-10: five gates in `security.yml`, Scorecard in reusable `scorecard.yml`, dogfood push run https://github.com/redscaresu/github-actions/actions/runs/38046711288; negative control https://github.com/redscaresu/github-actions/pull/10 closed unmerged; with the dependency graph turned off, `security / dependency-review` failed with the public-repo `::error::`)
 - [[bundle-templates-readme]] (later)
