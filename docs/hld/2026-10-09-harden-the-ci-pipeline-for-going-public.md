@@ -405,7 +405,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - adopt-bundle-private (done 2026-10-11: https://github.com/redscaresu/itsm/pull/32)
 - tag-v1-0-0 (done 2026-10-11: https://github.com/redscaresu/itsm/pull/36; v1.0.0 = c2c992c0fe67b561b37874af8a429972ad856d69; Dependabot handling of the tagged pin unverified until its first bump)
 - go-public (done 2026-10-11: https://github.com/redscaresu/itsm/pull/39; public 2026-10-11T03:26:41Z; mirror scan 0 leaks, 92 commits = rev-list --all, 40 refs incl. 39 refs/pull; secret scanning 0 open alerts; deleted readme-demo-gif, story/gosec-lint-config; branches left: main; ruleset 24875133 requires the seven; throwaway https://github.com/redscaresu/itsm/pull/40 closed unmerged)
-- [[public-only-gates]] (later)
+- public-only-gates (done 2026-10-11: codeql on https://github.com/redscaresu/itsm/pull/42, security / codeql success, CodeQL analyses on code scanning; Scorecard caller and badge https://github.com/redscaresu/itsm/pull/43, push run on main security / scorecard success, both Scorecard APIs report score 6 at a7d2789; ruleset 24875133 still the seven, scorecard not required)
 
 ### Decisions taken at decomposition
 
