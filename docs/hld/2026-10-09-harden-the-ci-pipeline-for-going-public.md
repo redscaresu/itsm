@@ -201,12 +201,12 @@ Rules for the bundle:
   asked for.
 
 Not in the bundle, shipped as `templates/` to copy in (six files, five after decision 6 removed `scorecard.yml`; drift is accepted and manual,
-each template carries a `# template: <name> @vX.Y.Z` header so a consumer can see what it has):
+each template carries a `# template: <name> @vX.Y.Z` header so a consumer can see what it has; `<name>` is the templates/ filename, the hooks.mk header is not carried (decision 4)):
 
 - **`scorecard.yml`**: cannot publish from a reusable workflow (Current state). The one per-repo
   workflow. *Removed by decision 6 (probe REFUTED): five templates; Scorecard is the bundle's
   reusable `.github/workflows/scorecard.yml`, called from its own per-repo caller file.*
-- **`dependabot.yml`**: gomod + github-actions, weekly, grouped, no auto-merge. The
+- **`dependabot.yml`**: gomod + github-actions, weekly, grouped, no auto-merge, cooldown default-days 7 (zizmor dependabot-cooldown). The
   github-actions ecosystem entry is what keeps the bundle's own ref fresh.
 - **`gitleaks.toml`**: default ruleset plus the `go.sum` allowlist. No TypeSafe-specific rule:
   the key's shape is not known (Open questions), so the generic entropy rule is what runs.
@@ -238,7 +238,7 @@ The shared repo has no code of its own, so a bare dogfood would prove only YAML 
 zizmor. It therefore carries a **minimal Go fixture** (`fixture/go.mod`, `fixture/main.go`, a
 dozen lines) so `govulncheck`, `codeql` and `dependency-review` have something real to run on,
 and `.github/workflows/ci.yml` calls `./.github/workflows/security.yml` by local path (so a PR
-tests the uncommitted change, not the last tag) plus copies of the templates. Its own zizmor job
+tests the uncommitted change, not the last tag) plus copies of the templates *(github-actions dogfoods three: .gitleaks.toml, SECURITY.md, .github/dependabot.yml; no Makefile, so pre-commit and hooks.mk are templates only)*. Its own zizmor job
 audits its own workflows, so an unpinned action in the bundle fails the bundle's own PR. What the
 dogfood cannot prove: that a *consumer's* code passes the Go gates; itsm's adoption PR is that
 test, and v1.0.0 is tagged only after both are green (Rollout).
@@ -401,7 +401,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - pin-ci-actions (done 2026-10-11: https://github.com/redscaresu/itsm/pull/27)
 - gosec-lint (done 2026-10-10: https://github.com/redscaresu/itsm/pull/24)
 - bundle-gates (done 2026-10-10: five gates in `security.yml`, Scorecard in reusable `scorecard.yml`, dogfood push run https://github.com/redscaresu/github-actions/actions/runs/38046711288; negative control https://github.com/redscaresu/github-actions/pull/10 closed unmerged; with the dependency graph turned off, `security / dependency-review` failed with the public-repo `::error::`)
-- [[bundle-templates-readme]] (later)
+- bundle-templates-readme (done 2026-10-11: https://github.com/redscaresu/github-actions/pull/12, https://github.com/redscaresu/github-actions/pull/11)
 - [[adopt-bundle-private]] (later)
 - [[tag-v1-0-0]] (later)
 - [[go-public]] (later)
@@ -414,7 +414,7 @@ These correct the text above where they disagree with it.
 1. **Where does the dogfood fixture's go.mod live? HLD:169 gates govulncheck on `hashFiles('go.mod') != ''` (repo root) but HLD:231 puts it at `fixture/go.mod`, and HLD:192-195 forbids a directory input.** `go.mod` at the github-actions root (module `github.com/redscaresu/github-actions`), `fixture/main.go` as its only package; local check `go vet ./...`. No new input. Alternative rejected: a `go-directory` input is a knob no consumer has asked for. (corrects HLD lines 169, 192-195, 231-232, 382)
 2. **Should `scorecard` be a required status check?** No. The template runs only on push:main, schedule and branch_protection_rule (goldfinger scorecard.yml:9-14); a required check no PR reports blocks every merge (HLD:267-268). Scorecard is a post-merge detector. Delete 'and `scorecard` once it exists' from Enforcement and 'and `scorecard`' from Rollout 6. (corrects HLD lines 265, 368-369)
 3. **Which step adds `security / codeql` to the ruleset?** Rollout 5 (go-public) requires all five `security / *` from the first ruleset; the skipped codeql job reports success until Rollout 6 turns it on. Rollout 6 changes nothing in the ruleset. (corrects HLD lines 366-369)
-4. **What do template headers and the caller comment say before v1.0.0 exists, and who rewrites them?** Shared `templates/` carry `template: <name>` with no version (the repo copy cannot know its future tag). Consumer copies carry `template: <name> @<version>` and the caller `# <version>`, both `unreleased` until the tag; tag-v1-0-0's one itsm PR rewrites all five to `v1.0.0`. Later consumers write the tag they copied from. (corrects HLD lines 198-199, 361)
+4. **What do template headers and the caller comment say before v1.0.0 exists, and who rewrites them?** Shared `templates/` carry `template: <name>` with no version (the repo copy cannot know its future tag). Consumer copies carry `template: <name> @<version>` and the caller `# <version>`, both `unreleased` until the tag; tag-v1-0-0's one itsm PR rewrites all five to `v1.0.0`. Later consumers write the tag they copied from. (corrects HLD lines 198-199, 361) *Amended 2026-10-11 (bundle-templates-readme): the consumer caller line carries no version comment until tag-v1-0-0 (zizmor's online ref-version-mismatch flags `# unreleased`, and `# v1.0.0` before the tag exists; checked 2026-10-11); template headers keep `@unreleased`.*
 5. **'Six copied files' names five files plus a Makefile target, and Rollout 3 copies five. Which is it?** Keep six: the sixth is `templates/hooks.mk` (the `hooks` target), applied as a Makefile edit in a consumer that has one. Rollout 3 copies dependabot.yml, gitleaks.toml, SECURITY.md, pre-commit and applies hooks.mk; scorecard.yml waits for Rollout 6. Decision 6 later removed `templates/scorecard.yml`, leaving five. (corrects HLD lines 60-61, 197-208, 246, 358-359)
 6. **If the probe shows Scorecard can publish from a reusable workflow, what changes and who owns it?** Follow HLD:147: bundle-gates adds a separate reusable `.github/workflows/scorecard.yml` (so `security.yml` callers never grant `id-token: write`); `templates/scorecard.yml` is dropped; README shows the consumer's `.github/workflows/scorecard.yml` caller: `on:` push to main and a weekly schedule only, `permissions: {}`, one job `security` (`name: security`), `uses: redscaresu/github-actions/.github/workflows/scorecard.yml@<sha> # <version>`, `permissions: {contents: read, id-token: write}`; never in a workflow that runs on pull_request; public-only-gates' second story adds that caller (check name `security / scorecard`). The owner confirms in bundle-scorecard-probe's your_part before bundle-gates goes active. Probe answer: REFUTED (https://github.com/redscaresu/github-actions/actions/runs/38005404874); the owner confirmed decision 6 on 2026-10-10, so this path applies. (corrects HLD lines 143-147, 200-201, 310-312, 368-370)
 7. **Where is the owner-reads-every-sensitive-diff rule written down (CODEOWNERS excluded)?** A 'Maintainer review' section in `templates/SECURITY.md`, so every consumer carries it; itsm's SECURITY.md gets it at adoption. (corrects HLD lines 278-284)
