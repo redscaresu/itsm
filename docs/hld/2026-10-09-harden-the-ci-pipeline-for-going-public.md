@@ -99,15 +99,15 @@ no repository secret exists. Missing versus goldfinger, from its `.github/` at `
 | goldfinger has | itsm today |
 |---|---|
 | Actions pinned by SHA with `# vX.Y.Z` comment, `persist-credentials: false` on every checkout | floating tags, default credential persistence *done: pin-ci-actions, https://github.com/redscaresu/itsm/pull/27* |
-| `gitleaks` job (full history, `--redact`, `.gitleaks.toml` allowlisting `go.sum`) + `make hooks` pre-commit hook (`scripts/pre-commit`) | none |
-| `govulncheck` job (`go run ...@latest`) | none |
-| `dependabot.yml`: gomod + github-actions, weekly, grouped, no auto-merge | none |
-| `zizmor.yml`: blocking audit of `.github/workflows` (`pipx run --spec zizmor==1.29.0`) | none (local zizmor: 0 findings after pin-ci-actions, https://github.com/redscaresu/itsm/pull/27) |
+| `gitleaks` job (full history, `--redact`, `.gitleaks.toml` allowlisting `go.sum`) + `make hooks` pre-commit hook (`scripts/pre-commit`) | none *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
+| `govulncheck` job (`go run ...@latest`) | none *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
+| `dependabot.yml`: gomod + github-actions, weekly, grouped, no auto-merge | none *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
+| `zizmor.yml`: blocking audit of `.github/workflows` (`pipx run --spec zizmor==1.29.0`) | none (local zizmor: 0 findings after pin-ci-actions, https://github.com/redscaresu/itsm/pull/27) *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
 | `codeql.yml`: Go, push/PR/weekly, `security-events: write` | none |
-| `dependency-review.yml`: fails PRs adding a vulnerable dep; skips green when the dependency graph is off | none |
+| `dependency-review.yml`: fails PRs adding a vulnerable dep; skips green when the dependency graph is off | none *notice path while private: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
 | `scorecard.yml`: OpenSSF Scorecard, publishes score, weekly | none |
 | `.golangci.yml` with `gosec` + `staticcheck`, `max-issues-per-linter: 0`, `max-same-issues: 0` | `standard` set + bodyclose, errorlint, misspell, noctx, revive, unconvert; no gosec; golangci default caps (50 / 3) |
-| `SECURITY.md` (private reporting, threat model, audit map) | none |
+| `SECURITY.md` (private reporting, threat model, audit map) | none *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32* |
 | `release.yml` (binaries, signing) | n/a: itsm ships no binaries |
 
 **gosec on itsm today** (reviewer, gosec v2.29.0, `-tags e2e,live`, production files only): two
@@ -364,7 +364,7 @@ Each step ships on its own and leaves both repos green, given the order below.
 3. **itsm: adopt the bundle, still private.** Caller `security.yml` pinned to the step-1 SHA with
    `codeql: false`; copy in five templates (not `scorecard.yml`); `SECURITY.md` adapted to itsm's
    key handling; `gosec` in `.golangci.yml` with the two findings triaged; `make hooks` and the
-   README line. Green on private itsm proves the Go gates on a real consumer.
+   README line. Green on private itsm proves the Go gates on a real consumer. *done: adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32; dependency-review notice path only*
 4. **`redscaresu/github-actions` v1.0.0.** Tag the step-1 SHA once step 3 is green; itsm's
    caller comment becomes `# v1.0.0` in its next Dependabot bump or by hand.
 5. **itsm: go public.** *Owner steps, in this order:* add `LICENSE` (Apache-2.0, decided); flip
@@ -402,7 +402,7 @@ In rollout order. Decomposed 2026-10-09; the owner approved the epics and the de
 - gosec-lint (done 2026-10-10: https://github.com/redscaresu/itsm/pull/24)
 - bundle-gates (done 2026-10-10: five gates in `security.yml`, Scorecard in reusable `scorecard.yml`, dogfood push run https://github.com/redscaresu/github-actions/actions/runs/38046711288; negative control https://github.com/redscaresu/github-actions/pull/10 closed unmerged; with the dependency graph turned off, `security / dependency-review` failed with the public-repo `::error::`)
 - bundle-templates-readme (done 2026-10-11: https://github.com/redscaresu/github-actions/pull/12, https://github.com/redscaresu/github-actions/pull/11)
-- [[adopt-bundle-private]] (later)
+- adopt-bundle-private (done 2026-10-11: https://github.com/redscaresu/itsm/pull/32)
 - [[tag-v1-0-0]] (later)
 - [[go-public]] (later)
 - [[public-only-gates]] (later)
