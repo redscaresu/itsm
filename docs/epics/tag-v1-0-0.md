@@ -9,8 +9,8 @@ hld: 2026-10-09-harden-the-ci-pipeline-for-going-public
 
 **Out of scope:** Any github-actions file change (the versioning README is already at X). A release workflow (HLD:232-233). A moving `v1` (HLD:230-231). Re-pinning itsm to a newer SHA.
 
-**Constraints:** Annotated, by hand, from a green dogfood (HLD:59,232-233,360); the tag object's SHA differs from X, so compare the peeled ref, never `git/ref/tags` `.object.sha`. If adoption forced a bundle fix, X is the fixed SHA, not Rollout 1's (HLD:360 says 'the step-1 SHA'). Dependabot opens no PR for a comment-only change, so the rewrite is a hand PR touching `.github/` (owner-read, HLD:278-284,361). MAJOR/MINOR/PATCH rules HLD:223-225.
+**Constraints:** X is c2c992c0fe67b561b37874af8a429972ad856d69 (itsm's caller after #32) unless a Dependabot bump of the bundle ref lands first; Dependabot's handling of an untagged SHA pin is unverified. Annotated, by hand, from a green dogfood (HLD:59,232-233,360); the tag object's SHA differs from X, so compare the peeled ref, never `git/ref/tags` `.object.sha`. If adoption forced a bundle fix, X is the fixed SHA, not Rollout 1's (HLD:360 says 'the step-1 SHA'). Dependabot opens no PR for a comment-only change, so the rewrite is a hand PR touching `.github/` (owner-read, HLD:278-284,361). MAJOR/MINOR/PATCH rules HLD:223-225.
 
-**Depends on:** adopt-bundle-private. **Areas:** [github-actions] tags, .github/workflows/security.yml, .github/dependabot.yml, .gitleaks.toml, SECURITY.md, scripts/pre-commit.
+**Depends on:** adopt-bundle-private (satisfied by adopt-bundle-private, https://github.com/redscaresu/itsm/pull/32). **Areas:** [github-actions] tags, .github/workflows/security.yml, .github/dependabot.yml, .gitleaks.toml, SECURITY.md, scripts/pre-commit.
 
 **Your part:** When the lead reports both preconditions green: in ~/Work/github-actions, `git fetch origin && git tag -a v1.0.0 X -m 'v1.0.0'` and `git push origin v1.0.0`, X read from itsm's caller line. Tell the lead; it checks the peeled ref. Then read and merge the lead's itsm `# v1.0.0` PR.
