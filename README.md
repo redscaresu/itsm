@@ -1,5 +1,7 @@
 # itsm
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/redscaresu/itsm/badge)](https://scorecard.dev/viewer/?uri=github.com/redscaresu/itsm)
+
 A demo IT self-service portal. A customer describes a problem in plain
 English. **jev** (TypeSafe's System One model) answers a fixed set of typed
 questions about it. Go code turns those answers into a team, a severity and,
