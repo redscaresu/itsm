@@ -1,4 +1,4 @@
-# template: dependabot.yml @unreleased
+# template: dependabot.yml @v1.0.0
 version: 2
 # Dependabot bumps for this repo. Every bump is a PR that goes through the
 # main ruleset, and the owner reads each one before merging it. Auto-merge is

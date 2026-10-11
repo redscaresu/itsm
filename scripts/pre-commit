@@ -1,5 +1,5 @@
 #!/bin/sh
-# template: pre-commit @unreleased
+# template: pre-commit @v1.0.0
 # Pre-commit hook: scan staged changes for secrets with gitleaks.
 # Install with `make hooks`. Bypassable with --no-verify; the CI gitleaks
 # job is the load-bearing backstop.

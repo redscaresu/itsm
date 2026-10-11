@@ -1,4 +1,4 @@
-<!-- template: SECURITY.md @unreleased -->
+<!-- template: SECURITY.md @v1.0.0 -->
 # Security Policy
 
 ## Reporting a vulnerability
