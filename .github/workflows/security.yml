@@ -14,7 +14,5 @@ jobs:
     name: security
     permissions:
       contents: read
-      security-events: write # a caller covers every called job, even with codeql: false
+      security-events: write # codeql uploads its results
     uses: redscaresu/github-actions/.github/workflows/security.yml@c2c992c0fe67b561b37874af8a429972ad856d69 # v1.0.0
-    with:
-      codeql: false
