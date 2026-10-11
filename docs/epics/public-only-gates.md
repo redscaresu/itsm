@@ -10,8 +10,8 @@ check: make check
 
 **Out of scope:** Any ruleset change (go-public owns it; Scorecard is not required, decision 2). Migrating goldfinger or any other repo (HLD:371-372). Release tooling. Changing the bundle.
 
-**Constraints:** Switch-on is its own PR after the flip, never bundled with code (method.md § Ship code switched off; HLD:368). The scorecard.yml caller has no workflow-level env/defaults (Scorecard logs a refused publish as a warning and stays green, goldfinger scorecard.yml:19-24), and Scorecard publishes only from a push or scheduled run on the default branch, so `security / scorecard` is never a PR gate. CodeQL blocks only at or above Check Failure severity (HLD:279-281). Both PRs touch `.github/` (owner-read). Local check: `make check`.
+**Constraints:** Switch-on is its own PR after the flip, never bundled with code (method.md § Ship code switched off; HLD:368). The scorecard.yml caller has no workflow-level env/defaults (Scorecard logs a refused publish as a warning and stays green, goldfinger scorecard.yml:19-24), and Scorecard publishes only from a push or scheduled run on the default branch, so `security / scorecard` is never a PR gate. CodeQL blocks only at or above Check Failure severity (HLD:279-281). Both PRs touch `.github/` (owner-read). Local check: `make check`. go-public's ruleset 24875133 requires exactly the seven contexts, with no code_scanning rule and no bypass, so an alert from the switched-on codeql does not block a merge (security / codeql succeeds with alerts, ../github-actions/.github/workflows/security.yml:140-141); adding a code_scanning rule meets Out of scope 'Any ruleset change' (:11) and is this epic's to decide.
 
-**Depends on:** go-public. **Areas:** .github/workflows/security.yml, README.md.
+**Depends on:** go-public (satisfied by go-public, https://github.com/redscaresu/itsm/pull/39). **Areas:** .github/workflows/security.yml, README.md.
 
 **Your part:** Read and merge the codeql PR, then the scorecard PR (HLD:278-284). Nothing in Settings. The lead verifies with the API calls in Done when.
